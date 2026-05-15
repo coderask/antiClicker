@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: phase-complete
-stopped_at: Phase 02 verification complete; ready to plan Phase 03
-last_updated: "2026-05-15T15:30:00.000Z"
-last_activity: 2026-05-15 -- Phase 02 complete (3/3 plans, launcher integration green)
+stopped_at: Phase 03 verification complete; ready to plan Phase 04
+last_updated: "2026-05-15T15:50:00.000Z"
+last_activity: 2026-05-15 -- Phase 03 complete (4/4 plans, full IPC chain green)
 progress:
   total_phases: 7
-  completed_phases: 3
-  total_plans: 13
-  completed_plans: 13
-  percent: 42
+  completed_phases: 4
+  total_plans: 17
+  completed_plans: 17
+  percent: 57
 ---
 
 # Project State
@@ -21,24 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-14)
 
 **Core value:** One click on a map = a Chrome window that *is* at that location.
-**Current focus:** Phase 01 complete — CDP geolocation spoof proven; ready for Phase 02 (multi-instance launcher)
+**Current focus:** Phase 03 complete — Electron IPC contract frozen; ready for Phase 04 (Map UI)
 
 ## Current Position
 
-Phase: 01 (cdp-cli-primitive) — COMPLETE
-Plan: 3 of 3
-Status: Phase 01 verification passed — all 4 success criteria met
-Last activity: 2026-05-15 -- All 3 plans done; 25 unit tests + 4 integration tests green
+Phase: 03 (electron-shell-ipc) — COMPLETE
+Plan: 4 of 4
+Status: Phase 03 verification passed — all 4 success criteria met
+Last activity: 2026-05-15 -- All 4 plans done; 53 unit tests + 5 launcher tests + 13 e2e tests green
 
-Progress: [██░░░░░░░░] 28%
+Progress: [████░░░░░░] 57%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 7
+- Total plans completed: 17
 - Phase 0 plans: 7 (1 deferred-artifact-only, 6 fully autonomous)
-- Total execution time: ~6 hours (with two executor stream timeouts mid-Wave-2, recovered inline)
+- Total execution time: ~7.5 hours (with two executor stream timeouts mid-Wave-2, recovered inline)
 
 **By Phase:**
 
@@ -46,11 +46,13 @@ Progress: [██░░░░░░░░] 28%
 |-------|-------|-------|----------|
 | 00 | 7 | ~6h | ~50min |
 | 01 | 3 | ~55min | ~18min |
+| 02 | 3 | ~45min | ~15min |
+| 03 | 4 | ~90min | ~22min |
 
 **Recent Trend:**
 
-- Last 5 plans: 01-01 (CLI), 01-02 (unit tests), 01-03 (integration tests)
-- Trend: fast execution; Phase 1 completed in under an hour
+- Last 5 plans: 02-03 (integration tests), 03-01 (IPC), 03-02 (preload), 03-03 (UI), 03-04 (tests)
+- Trend: steady execution; Phase 3 added IPC contract + e2e proof
 
 *Updated after each plan completion*
 
@@ -69,6 +71,8 @@ Recent decisions affecting current work:
 - Phase 0: FND-01 e2e uses `webContents.getLastWebPreferences()` (Electron 35 API), not `getWebPreferences()` (removed).
 - Phase 1: launchPersistentContext with geolocation+permissions in constructor options is the canonical pattern — atomic grant, context-scoped, no race window.
 - Phase 1: data: and about:blank URLs are non-secure origins in Chromium — geolocation requires localhost or https://. Use 127.0.0.1 HTTP server for integration test fixtures.
+- Phase 3: playwright + playwright-core must be explicitly included in externalizeDepsPlugin's include list — they are devDependencies, not auto-externalized. Bundling playwright causes chromium-bidi to be hoisted as a static ESM import that Node cannot resolve.
+- Phase 3: onInstanceClosed uses callback+unsubscribe pattern (not async-iterable) — matches React useEffect cleanup return signature exactly.
 
 ### Pending Todos
 
@@ -76,9 +80,8 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-None for Phase 2. Carry-forward research flags:
+None for Phase 4. Carry-forward research flags:
 
-- Phase 2: Port ephemeral selection — `--remote-debugging-port=0` + read DevToolsActivePort (Pitfall 8)
 - Phase 4: MapLibre 5 raster attribution requirements (EOX S2cloudless — attribution must be visible per tile-source terms)
 - Phase 6: Bundled-Chromium packaging via `extraResources` + macOS notarization for spawned Chromium child
 
@@ -91,5 +94,5 @@ None for Phase 2. Carry-forward research flags:
 ## Session Continuity
 
 Last session: 2026-05-15
-Stopped at: Phase 01 complete; ready to plan Phase 02 (multi-instance launcher)
+Stopped at: Phase 03 complete; ready to plan Phase 04 (Map UI)
 Resume file: None

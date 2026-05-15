@@ -13,7 +13,7 @@ AntiClicker is a single-purpose desktop tool whose load-bearing primitive is one
 - [x] **Phase 0: Foundation / Bootstrap** - Secure Electron 35 shell, localhost-served renderer, electron-store config slot
 - [x] **Phase 1: CDP Geolocation Primitive (CLI)** - Prove the spoof in a standalone CLI before any shell or map work
 - [x] **Phase 2: Multi-Instance Launcher Module** - Parallel isolated Chromes via ephemeral profiles + ports + live setGeolocation
-- [ ] **Phase 3: Electron Shell + IPC** - Move launcher into main; freeze contextBridge IPC contract via placeholder UI
+- [x] **Phase 3: Electron Shell + IPC** - Move launcher into main; freeze contextBridge IPC contract via placeholder UI
 - [ ] **Phase 4: Map UI** - MapLibre + EOX satellite default, Google Maps opt-in, draggable pin, manual entry, paste-from-URL
 - [ ] **Phase 5: Multi-Instance UX + Live Update** - Sidebar, per-instance colored pins, live setGeolocation on pin drag
 - [ ] **Phase 6: Verification + Polish + Package** - Verify-spoof flow, scope overlay, bundled-Chromium fallback, cleanup, .dmg build
@@ -86,7 +86,12 @@ Plans:
   2. `main/ipc.ts` validates every renderer→main payload through zod schemas before any CDP call — sending `lat: 95` or `lng: "foo"` from a hacked renderer returns a validation error and never reaches Playwright
   3. `window.api` exposes exactly four invokable methods (`launch`, `setGeo`, `close`, `list`) and one subscription (`onInstanceClosed`); no other surface area is reachable from the renderer
   4. The renderer receives an `instance-closed` event with the correct instance ID when the user closes a launched Chrome window; the placeholder UI's instance count decrements accordingly
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [x] 03-01-PLAN.md — Main IPC handlers + launcher singleton + zod validation + lifecycle cleanup
+- [x] 03-02-PLAN.md — contextBridge preload extension (4 invoke methods + onInstanceClosed subscription)
+- [x] 03-03-PLAN.md — Placeholder launch button + live-instances readout in App.tsx
+- [x] 03-04-PLAN.md — Zod IPC validation unit tests + Electron launch-flow e2e
 **UI hint**: yes
 
 ### Phase 4: Map UI
@@ -145,8 +150,8 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 0. Foundation / Bootstrap | 7/7 | Complete | 2026-05-15 |
 | 1. CDP Geolocation Primitive (CLI) | 3/3 | Complete | 2026-05-15 |
-| 2. Multi-Instance Launcher Module | 0/TBD | Not started | - |
-| 3. Electron Shell + IPC | 0/TBD | Not started | - |
+| 2. Multi-Instance Launcher Module | 3/3 | Complete | 2026-05-15 |
+| 3. Electron Shell + IPC | 4/4 | Complete | 2026-05-15 |
 | 4. Map UI | 0/TBD | Not started | - |
 | 5. Multi-Instance UX + Live Update | 0/TBD | Not started | - |
 | 6. Verification + Polish + Package | 0/TBD | Not started | - |
