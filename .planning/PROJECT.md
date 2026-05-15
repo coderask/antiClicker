@@ -45,9 +45,9 @@ A desktop tool that lets you drop a pin anywhere on a Google Maps (satellite vie
 ## Constraints
 
 - **Tech stack**: Must drive a real Chrome (or Chromium) instance — no headless-only build, since the user expects a "simple chrome instance" they can interact with.
-- **Platform**: macOS first (user's environment is Darwin); Windows/Linux can follow if the automation library is cross-platform (Playwright/Puppeteer are).
-- **Dependencies**: Google Maps JavaScript API (requires user-supplied API key); Chrome must be installed locally (or bundled Chromium via Playwright).
-- **Security**: Don't hard-code API keys; store them in a local config file outside version control.
+- **Platform**: macOS and Windows are both first-class targets for v1. Linux can follow. Stack (Electron 35 + Playwright + MapLibre GL JS) is cross-platform; the only OS-specific surface is the packaged installer (`.dmg` on macOS, NSIS `.exe` on Windows) produced by `electron-builder`.
+- **Dependencies**: MapLibre GL JS + EOX S2cloudless satellite tiles (no API key required — v1 ships with this only). Playwright bundles its own Chromium, so end users don't need Chrome pre-installed. Google Maps JavaScript API is explicitly **out of scope for v1** — the `googleMapsApiKey` slot in `electron-store` stays unused and is reserved for a post-v1 opt-in.
+- **Security**: Don't hard-code secrets in source. The only durable secret in v1 is any signing certificate used at packaging time, which lives in `.env.local` (gitignored) and is consumed by `electron-builder`, not by the runtime app.
 - **Performance**: Map should feel snappy (no lag when dragging the pin); Chrome launch should complete in < 5s.
 
 ## Key Decisions

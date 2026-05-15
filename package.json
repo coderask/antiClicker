@@ -13,7 +13,49 @@
     "test:unit": "vitest run",
     "test:e2e": "npm run build && playwright test",
     "lint": "eslint --cache .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "package": "npm run build && electron-builder --mac --win",
+    "package:mac": "npm run build && electron-builder --mac",
+    "package:win": "npm run build && electron-builder --win"
+  },
+  "build": {
+    "appId": "com.anticlicker.app",
+    "productName": "AntiClicker",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "identity": null
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    }
   },
   "dependencies": {
     "electron-store": "^11.0.2",
@@ -27,6 +69,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "electron": "~35.7.5",
+    "electron-builder": "^26.8.1",
     "electron-vite": "^5.0.0",
     "eslint": "^9.39.0",
     "prettier": "^3.7.4",

@@ -111,7 +111,7 @@ Plans:
 **UI hint**: yes
 
 ### Phase 6: Verification + Polish + Package
-**Goal**: Ship a hardened, packaged macOS .dmg that proves the spoof works, communicates its scope honestly to users, cleans up after itself, and degrades gracefully when Chrome is missing or things crash.
+**Goal**: Ship hardened, packaged installers for **both macOS (.dmg) and Windows (NSIS .exe)** that prove the spoof works, communicate its scope honestly to users, clean up after themselves, and degrade gracefully when Chrome is missing or things crash.
 **Mode:** mvp
 **Depends on**: Phase 5
 **Requirements**: VRF-01, VRF-02, VRF-03, REL-01, REL-03, REL-04, FND-04
@@ -119,9 +119,12 @@ Plans:
   1. Clicking the "Verify spoof" button on a running instance opens `browserleaks.com/geo`, `/ip`, and `/timezone` in that launched Chrome; the user can visually confirm that geo reflects the pin coordinates while IP and timezone show their real values (the intended, documented scope)
   2. The in-app verification panel shows the result of `navigator.geolocation.getCurrentPosition()` round-tripped via CDP `Runtime.evaluate` — the displayed lat/lng matches the pin's lat/lng to within the configured accuracy
   3. On first run, a one-time overlay appears explaining: "Coordinates only — your IP, timezone, and language are unchanged"; dismissing it persists the "seen" flag so it never appears again
-  4. With no local Chrome/Chromium installed (verified by temporarily renaming `/Applications/Google Chrome.app`), launching offers to use Playwright's bundled Chromium fallback; choosing the fallback successfully launches a spoofed instance
+  4. With no local Chrome/Chromium installed, launching offers to use Playwright's bundled Chromium fallback; choosing the fallback successfully launches a spoofed instance. (Verified on macOS by temporarily renaming `/Applications/Google Chrome.app`; on Windows by uninstalling Chrome from the test VM.)
   5. On app quit with running instances, all child Chrome processes are terminated (or the user is warned) and every `anticlicker-profile-*` directory under `os.tmpdir()` is deleted; on the next app startup, any orphaned `anticlicker-profile-*` dirs whose owning PID is no longer alive are swept on launch
-  6. `npm run build` produces a runnable macOS `.dmg` that installs cleanly on a fresh macOS machine; opening the installed app from `/Applications/` reproduces the full end-to-end flow (map renders, pin drags, Chrome launches at the pin, verification passes)
+  6. `npm run package` produces **two** artifacts in `dist/`:
+     - `AntiClicker-<version>.dmg` (macOS, unsigned — users will see a Gatekeeper warning on first run; documented in README)
+     - `AntiClicker-Setup-<version>.exe` (Windows NSIS installer, unsigned — users will see a SmartScreen warning on first run; documented in README)
+     Both artifacts install cleanly and reproduce the full end-to-end flow (map renders, pin drags, Chrome launches at the pin, verification passes). The macOS `.dmg` is built natively; the Windows `.exe` is cross-compiled from macOS via electron-builder (no Wine required for NSIS targets).
 **Plans**: TBD
 **UI hint**: yes
 

@@ -69,22 +69,21 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- **Before Phase 4:** User must complete the four Google Cloud Console steps in `.planning/phases/00-foundation-bootstrap/CLOUD-CONSOLE-CHECKLIST.md` (Maps API enable + QPD quota + budget alerts + referrer-restricted key). Plan 00-07's checklist artifact is in place but the `[ ]` boxes are unchecked.
+- (none — Google Cloud Console setup is no longer required; v1 ships MapLibre + EOX, no API key path)
 
 ### Blockers/Concerns
 
 None for Phase 1. Carry-forward research flags:
 
 - Phase 1: Verify Playwright 1.60 `launchPersistentContext` API shape against bundled Chromium 136
-- Phase 4: MapLibre 5 raster attribution requirements + clean basemap hot-swap pattern
-- Phase 4: **Hard gate** — verify the Cloud Console checklist before any Maps integration code lands
+- Phase 4: MapLibre 5 raster attribution requirements (EOX S2cloudless — attribution must be visible per tile-source terms)
 - Phase 6: Bundled-Chromium packaging via `extraResources` + macOS notarization for spawned Chromium child
 
 ## Deferred Items
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| External-service config | Google Cloud Console setup (Maps API + quota + budget + key) | Open | Phase 0 (must close before Phase 4) |
+| *(none)* | | | |
 
 ## Session Continuity
 
