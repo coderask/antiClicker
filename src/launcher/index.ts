@@ -66,6 +66,14 @@ export interface Launcher {
   list(): Instance[];
   /** Subscribe to lifecycle events. */
   on(event: 'instance-closed', handler: (id: InstanceId) => void): void;
+  /**
+   * Evaluate a function in the context of the first page of a running instance.
+   * The function must be serializable (no closures over non-serializable values).
+   * Returns the result of the function call.
+   */
+  evaluate<T>(id: InstanceId, fn: () => Promise<T>): Promise<T>;
+  /** Get the raw BrowserContext for a running instance (for IPC verify-spoof). */
+  getContext(id: InstanceId): import('playwright').BrowserContext;
 }
 
 // ---------------------------------------------------------------------------
@@ -176,6 +184,17 @@ export function createLauncher(): Launcher {
       const existing = listeners.get(event) ?? [];
       existing.push(handler);
       listeners.set(event, existing);
+    },
+
+    async evaluate<T>(id: InstanceId, fn: () => Promise<T>): Promise<T> {
+      const entry = registry.getOrThrow(id);
+      const pages = entry.context.pages();
+      const page = pages.length > 0 ? pages[0] : await entry.context.newPage();
+      return page.evaluate(fn);
+    },
+
+    getContext(id: InstanceId): import('playwright').BrowserContext {
+      return registry.getOrThrow(id).context;
     },
 
     // Test-only escape hatch: returns the raw BrowserContext for a running

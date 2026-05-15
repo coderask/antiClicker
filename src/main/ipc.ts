@@ -43,6 +43,11 @@ export const ClosePayloadSchema = z.object({
   id: z.string(),
 });
 
+/** Schema for verify-spoof and open-verification-urls payloads — single id. */
+export const VerifyPayloadSchema = z.object({
+  id: z.string(),
+});
+
 // ---------------------------------------------------------------------------
 // Launcher singleton
 // ---------------------------------------------------------------------------
@@ -98,7 +103,16 @@ export function registerIpc(): void {
   // Returns: Instance { id, coords, userDataDir }
   ipcMain.handle(IpcChannels.LauncherLaunch, async (_e, payload: unknown) => {
     const coords = LaunchPayloadSchema.parse(payload);
-    return getLauncher().launch(coords);
+    try {
+      return await getLauncher().launch(coords);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      // Surface actionable error if Playwright's bundled Chromium is missing
+      if (/executable doesn't exist|chromium/i.test(msg)) {
+        throw new Error('Chromium not found. Run: npx playwright install chromium');
+      }
+      throw err;
+    }
   });
 
   // Push new coordinates to a running instance (no relaunch).
@@ -119,6 +133,84 @@ export function registerIpc(): void {
   // No payload.
   ipcMain.handle(IpcChannels.LauncherList, () => {
     return getLauncher().list();
+  });
+
+  // ------------------------------------------------------------------
+  // Phase 6 handlers — verification + first-run
+  // ------------------------------------------------------------------
+
+  // Return whether the user has seen the first-run scope overlay.
+  ipcMain.handle(IpcChannels.ConfigGetFirstRunSeen, (): boolean => {
+    return getStore().get('firstRunSeen');
+  });
+
+  // Persist that the user has dismissed the first-run scope overlay.
+  ipcMain.handle(IpcChannels.ConfigMarkFirstRunSeen, (): void => {
+    getStore().set('firstRunSeen', true);
+  });
+
+  // Verify that a running instance's spoofed geolocation matches the expected coords.
+  // Returns { reported: {lat, lng}, expected: {lat, lng}, match: boolean }
+  ipcMain.handle(IpcChannels.LauncherVerifySpoof, async (_e, payload: unknown) => {
+    const { id } = VerifyPayloadSchema.parse(payload);
+    const launcher = getLauncher();
+    const context = launcher.getContext(id);
+    const instances = launcher.list();
+    const instance = instances.find((i) => i.id === id);
+    if (!instance) throw new Error(`Instance "${id}" not found`);
+
+    const expectedLat = instance.coords.latitude;
+    const expectedLng = instance.coords.longitude;
+
+    // Get or open a page in the instance's context
+    const pages = context.pages();
+    const page = pages.length > 0 ? pages[0] : await context.newPage();
+
+    // Evaluate geolocation in the spoofed Chrome.
+    // The page.evaluate callback runs inside Chromium (DOM APIs available).
+    // Cast to unknown first to bypass the Node tsconfig's missing DOM lib.
+    type GeoResult = { lat: number; lng: number };
+    const reported = (await page.evaluate(() => {
+      return new Promise<{ lat: number; lng: number }>((resolve, reject) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (navigator as unknown as { geolocation: { getCurrentPosition: (ok: (p: any) => void, err: (e: any) => void, opts: any) => void } })
+          .geolocation.getCurrentPosition(
+            (pos: { coords: { latitude: number; longitude: number } }) =>
+              resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            (e: { message: string }) => reject(new Error(e.message)),
+            { enableHighAccuracy: false, timeout: 5000 },
+          );
+      });
+    })) as GeoResult;
+
+    const match =
+      Math.abs(reported.lat - expectedLat) < 0.001 &&
+      Math.abs(reported.lng - expectedLng) < 0.001;
+
+    return {
+      reported,
+      expected: { lat: expectedLat, lng: expectedLng },
+      match,
+    };
+  });
+
+  // Open browserleaks verification URLs in the launched Chrome.
+  ipcMain.handle(IpcChannels.LauncherOpenVerificationUrls, async (_e, payload: unknown) => {
+    const { id } = VerifyPayloadSchema.parse(payload);
+    const context = getLauncher().getContext(id);
+
+    const pages = context.pages();
+    const firstPage = pages.length > 0 ? pages[0] : await context.newPage();
+
+    // Navigate existing tab to geo verification
+    void firstPage.goto('https://browserleaks.com/geo').catch(() => undefined);
+
+    // Open new tabs for IP and timezone
+    const ipPage = await context.newPage();
+    void ipPage.goto('https://browserleaks.com/ip').catch(() => undefined);
+
+    const tzPage = await context.newPage();
+    void tzPage.goto('https://browserleaks.com/timezone').catch(() => undefined);
   });
 
   // ------------------------------------------------------------------
