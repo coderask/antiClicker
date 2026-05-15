@@ -10,7 +10,7 @@ AntiClicker is a single-purpose desktop tool whose load-bearing primitive is one
 - Integer phases (0, 1, 2, 3, 4, 5, 6): Planned milestone work
 - Decimal phases (e.g., 2.1): Urgent insertions (marked INSERTED)
 
-- [ ] **Phase 0: Foundation / Bootstrap** - Secure Electron 35 shell, localhost-served renderer, electron-store config slot
+- [x] **Phase 0: Foundation / Bootstrap** - Secure Electron 35 shell, localhost-served renderer, electron-store config slot
 - [ ] **Phase 1: CDP Geolocation Primitive (CLI)** - Prove the spoof in a standalone CLI before any shell or map work
 - [ ] **Phase 2: Multi-Instance Launcher Module** - Parallel isolated Chromes via ephemeral profiles + ports + live setGeolocation
 - [ ] **Phase 3: Electron Shell + IPC** - Move launcher into main; freeze contextBridge IPC contract via placeholder UI
@@ -32,13 +32,13 @@ AntiClicker is a single-purpose desktop tool whose load-bearing primitive is one
   4. The contextBridge preload exposes only a narrow, typed API surface (no raw `ipcRenderer`, no `require`)
 **Plans**: 7 plans
 Plans:
-- [ ] 00-01-PLAN.md — Scaffold electron-vite project, pin versions, lay down Wave 0 test infra
-- [ ] 00-02-PLAN.md — Secure main process: webPreferences + dev/packaged URL switch + IPC bootstrap
-- [ ] 00-03-PLAN.md — Load-bearing node:http renderer server (FND-02)
-- [ ] 00-04-PLAN.md — electron-store + zod ConfigSchema wrapper (FND-03)
-- [ ] 00-05-PLAN.md — contextBridge preload + Phase 0 verification UI (FND-01 #4)
-- [ ] 00-06-PLAN.md — Playwright Electron e2e: secure-defaults, http-protocol, persistence
-- [ ] 00-07-PLAN.md — Manual Google Cloud Console quota cap + budget alerts checklist
+- [x] 00-01-PLAN.md — Scaffold electron-vite project, pin versions, lay down Wave 0 test infra
+- [x] 00-02-PLAN.md — Secure main process: webPreferences + dev/packaged URL switch + IPC bootstrap
+- [x] 00-03-PLAN.md — Load-bearing node:http renderer server (FND-02)
+- [x] 00-04-PLAN.md — electron-store + zod ConfigSchema wrapper (FND-03)
+- [x] 00-05-PLAN.md — contextBridge preload + Phase 0 verification UI (FND-01 #4)
+- [x] 00-06-PLAN.md — Playwright Electron e2e: secure-defaults, http-protocol, persistence
+- [x] 00-07-PLAN.md — Manual Google Cloud Console quota cap + budget alerts checklist (DEFERRED — see CLOUD-CONSOLE-CHECKLIST.md; must complete before Phase 4)
 **UI hint**: no
 
 ### Phase 1: CDP Geolocation Primitive (CLI)
