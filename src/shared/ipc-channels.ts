@@ -11,11 +11,19 @@
 //
 // Phase 0 keeps the surface intentionally minimal: every channel is attack
 // surface, so we only register what FND verification demands. Phase 3 adds
-// the launcher channels.
+// the launcher channels below.
 
 export const IpcChannels = {
+  // Phase 0 — foundation verification
   Ping: 'ping',
   ConfigGetLaunchCount: 'config:get-launch-count',
+  // Phase 3 — launcher IPC (renderer → main invoke channels)
+  LauncherLaunch: 'launcher:launch',
+  LauncherSetGeo: 'launcher:set-geo',
+  LauncherClose: 'launcher:close',
+  LauncherList: 'launcher:list',
+  // Phase 3 — launcher IPC (main → renderer push channel)
+  LauncherInstanceClosed: 'launcher:instance-closed',
 } as const;
 
 export type IpcChannel = (typeof IpcChannels)[keyof typeof IpcChannels];

@@ -30,7 +30,7 @@ import { dirname, join } from 'node:path';
 import { is } from '@electron-toolkit/utils';
 import { startRendererServer, stopRendererServer } from './renderer-server.js';
 import { initConfigStore } from './config-store.js';
-import { registerIpc } from './ipc.js';
+import { registerIpc, closeLauncherIfAny } from './ipc.js';
 
 // ESM has no __dirname global — derive it from import.meta.url.
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -86,11 +86,13 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
-// Cleanup the renderer HTTP server before the app exits (00-RESEARCH.md
-// Pitfall 6 — leaking the listening socket across hot reloads in dev wedges
-// the next launch). `before-quit` fires once even on multi-window quits.
+// Cleanup the renderer HTTP server and any running launcher instances before the
+// app exits (00-RESEARCH.md Pitfall 6 — leaking the listening socket across hot
+// reloads in dev wedges the next launch). `before-quit` fires once even on
+// multi-window quits. closeLauncherIfAny() is a no-op if no launcher was created.
 app.on('before-quit', async () => {
   await stopRendererServer();
+  await closeLauncherIfAny();
 });
 
 // Defense in depth: deny any window.open() from the renderer. Phase 0 has no
