@@ -1,8 +1,16 @@
 // src/renderer/src/map/MapView.tsx
 //
-// MapLibre GL JS 5 satellite map component backed by EOX S2cloudless raster tiles.
-// No API key required. Attribution is rendered automatically by MapLibre's built-in
-// attribution control from the source's `attribution` string.
+// Phase 5 — Multi-Instance UX (extends Phase 4 Map UI)
+//
+// Renders:
+//   1. A "draft" pin — the un-launched click (existing Phase 4 single-pin behavior)
+//   2. N "instance" markers — one per running Chrome instance, colored + draggable
+//
+// Instance markers:
+//   - Each gets a custom HTML element with the instance's assigned color
+//   - draggable: true — dragend fires onMarkerDrag(id, newCoords)
+//   - Active instance marker gets a bright white border + scale-up
+//   - Markers are diffed on every render (add missing, remove stale, update existing)
 //
 // Notes:
 //  - Container div must have explicit height (100%) — MapLibre silently renders into
@@ -38,21 +46,47 @@ export interface PinCoords {
   longitude: number;
 }
 
+export interface InstanceMarkerInfo {
+  id: string;
+  coords: PinCoords;
+  color: string;
+}
+
 export interface MapViewProps {
+  // Draft pin (un-launched click) — existing single-pin behavior
   pin: PinCoords | null;
   onPinChange: (coords: PinCoords) => void;
   flyToTrigger?: { latitude: number; longitude: number; counter: number };
+  // Multi-instance markers (optional — backward compatible)
+  instances?: Map<string, InstanceMarkerInfo>;
+  activeId?: string | null;
+  onMarkerDrag?: (id: string, newCoords: PinCoords) => void;
 }
 
-export default function MapView({ pin, onPinChange, flyToTrigger }: MapViewProps) {
+export default function MapView({
+  pin,
+  onPinChange,
+  flyToTrigger,
+  instances,
+  activeId,
+  onMarkerDrag,
+}: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+
+  // Draft pin marker ref (single marker for un-launched pin)
   const markerRef = useRef<maplibregl.Marker | null>(null);
 
-  // Store the latest onPinChange in a ref so event listeners always call
-  // the current version without needing to re-attach listeners on every render.
+  // Per-instance marker map: InstanceId → Marker
+  const instanceMarkersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
+
+  // Store callbacks in refs so event listeners always call the current version
+  // without needing to re-attach on every render.
   const onPinChangeRef = useRef(onPinChange);
   onPinChangeRef.current = onPinChange;
+
+  const onMarkerDragRef = useRef(onMarkerDrag);
+  onMarkerDragRef.current = onMarkerDrag;
 
   // -------------------------------------------------------------------------
   // Mount: create the map instance (runs once)
@@ -70,7 +104,7 @@ export default function MapView({ pin, onPinChange, flyToTrigger }: MapViewProps
 
     mapRef.current = map;
 
-    // Click-to-drop-pin: clicking anywhere on the map places/moves the pin
+    // Click-to-drop-pin: clicking anywhere on the map places/moves the draft pin
     map.on('click', (e: maplibregl.MapMouseEvent) => {
       const { lat, lng } = e.lngLat;
       onPinChangeRef.current({ latitude: lat, longitude: lng });
@@ -78,22 +112,29 @@ export default function MapView({ pin, onPinChange, flyToTrigger }: MapViewProps
 
     // Cleanup: MUST call map.remove() to free WebGL context (critical for hot-reload)
     return () => {
+      // Remove all instance markers
+      for (const marker of instanceMarkersRef.current.values()) {
+        marker.remove();
+      }
+      instanceMarkersRef.current.clear();
+
+      // Remove draft marker
       markerRef.current?.remove();
       markerRef.current = null;
+
       map.remove();
       mapRef.current = null;
     };
   }, []);
 
   // -------------------------------------------------------------------------
-  // Pin sync: create/update/remove marker when pin prop changes
+  // Draft pin sync: create/update/remove draft marker when pin prop changes
   // -------------------------------------------------------------------------
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
     if (pin === null) {
-      // Remove marker if it exists
       if (markerRef.current) {
         markerRef.current.remove();
         markerRef.current = null;
@@ -104,7 +145,7 @@ export default function MapView({ pin, onPinChange, flyToTrigger }: MapViewProps
     const lngLat: [number, number] = [pin.longitude, pin.latitude];
 
     if (!markerRef.current) {
-      // Create a new draggable marker
+      // Create a new draggable draft marker (default MapLibre style)
       const marker = new maplibregl.Marker({ draggable: true })
         .setLngLat(lngLat)
         .addTo(map);
@@ -116,10 +157,69 @@ export default function MapView({ pin, onPinChange, flyToTrigger }: MapViewProps
 
       markerRef.current = marker;
     } else {
-      // Update existing marker position
+      // Update existing draft marker position
       markerRef.current.setLngLat(lngLat);
     }
   }, [pin]);
+
+  // -------------------------------------------------------------------------
+  // Instance markers sync: diff the instances Map and update markers
+  // -------------------------------------------------------------------------
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const incoming = instances ?? new Map<string, InstanceMarkerInfo>();
+    const markerMap = instanceMarkersRef.current;
+
+    // Remove markers for instances no longer in the Map
+    for (const [id, marker] of markerMap) {
+      if (!incoming.has(id)) {
+        marker.remove();
+        markerMap.delete(id);
+      }
+    }
+
+    // Add or update markers for current instances
+    for (const [id, info] of incoming) {
+      const isActive = activeId === id;
+
+      if (markerMap.has(id)) {
+        // Update position
+        markerMap.get(id)!.setLngLat([info.coords.longitude, info.coords.latitude]);
+        // Update active state styling on the element
+        const el = markerMap.get(id)!.getElement();
+        el.style.border = `3px solid ${isActive ? '#ffffff' : 'rgba(255,255,255,0.4)'}`;
+        el.style.transform = isActive ? 'scale(1.3)' : 'scale(1)';
+      } else {
+        // Create new colored instance marker
+        const el = document.createElement('div');
+        el.style.cssText = [
+          'width:20px',
+          'height:20px',
+          'border-radius:50%',
+          `background:${info.color}`,
+          `border:3px solid ${isActive ? '#ffffff' : 'rgba(255,255,255,0.4)'}`,
+          'cursor:grab',
+          'box-shadow:0 2px 6px rgba(0,0,0,0.6)',
+          `transform:${isActive ? 'scale(1.3)' : 'scale(1)'}`,
+          'transition:transform 0.15s,border-color 0.15s',
+        ].join(';');
+
+        const capturedId = id;
+        const marker = new maplibregl.Marker({ element: el, draggable: true })
+          .setLngLat([info.coords.longitude, info.coords.latitude])
+          .addTo(map);
+
+        marker.on('dragend', () => {
+          const pos = marker.getLngLat();
+          onMarkerDragRef.current?.(capturedId, { latitude: pos.lat, longitude: pos.lng });
+        });
+
+        markerMap.set(id, marker);
+      }
+    }
+  }, [instances, activeId]);
 
   // -------------------------------------------------------------------------
   // flyTo: animate map to coords when flyToTrigger counter changes
