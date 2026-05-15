@@ -12,6 +12,7 @@ import { z } from 'zod';
 export const ConfigSchema = z.object({
   launchCount: z.number().int().nonnegative().default(0),
   googleMapsApiKey: z.string().nullable().default(null),
+  firstRunSeen: z.boolean().default(false),
 });
 
 export type AppConfig = z.infer<typeof ConfigSchema>;

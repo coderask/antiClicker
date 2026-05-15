@@ -14,7 +14,7 @@
 //   - Pitfall 8 non-issue: Playwright manages CDP port internally; no --remote-debugging-port
 //   - Cleanup is best-effort: close handler never throws
 
-import { rmSync } from 'node:fs';
+import { rmSync, writeFileSync } from 'node:fs';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -98,6 +98,13 @@ export function createLauncher(): Launcher {
 
       const id: InstanceId = randomUUID().replace(/-/g, '').slice(0, 8);
       const userDataDir = await mkdtemp(join(tmpdir(), 'anticlicker-profile-'));
+
+      // Write pid.txt sentinel for orphan sweep on next startup
+      try {
+        writeFileSync(join(userDataDir, 'pid.txt'), String(process.pid));
+      } catch {
+        // Best-effort — if write fails the sweep will treat dir as orphaned (safe)
+      }
 
       const context = await chromium.launchPersistentContext(userDataDir, {
         headless: opts.headless ?? false,

@@ -24,6 +24,11 @@ export const IpcChannels = {
   LauncherList: 'launcher:list',
   // Phase 3 — launcher IPC (main → renderer push channel)
   LauncherInstanceClosed: 'launcher:instance-closed',
+  // Phase 6 — verification + first-run
+  ConfigGetFirstRunSeen: 'config:get-first-run-seen',
+  ConfigMarkFirstRunSeen: 'config:mark-first-run-seen',
+  LauncherVerifySpoof: 'launcher:verify-spoof',
+  LauncherOpenVerificationUrls: 'launcher:open-verification-urls',
 } as const;
 
 export type IpcChannel = (typeof IpcChannels)[keyof typeof IpcChannels];
