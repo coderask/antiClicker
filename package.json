@@ -1,0 +1,39 @@
+{
+  "name": "anticlicker",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "tsc --noEmit && electron-vite build",
+    "start": "electron-vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test",
+    "lint": "eslint --cache .",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "electron-store": "^11.0.2",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@electron-toolkit/utils": "^4.0.0",
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^22.7.7",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "electron": "~35.7.5",
+    "electron-vite": "^5.0.0",
+    "eslint": "^9.39.0",
+    "prettier": "^3.7.4",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.3",
+    "vitest": "^4.1.6"
+  }
+}
