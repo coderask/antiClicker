@@ -16,7 +16,16 @@ export default defineConfig({
   },
   preload: {
     plugins: [externalizeDepsPlugin()],
-    build: { outDir: 'out/preload' },
+    build: {
+      outDir: 'out/preload',
+      // Sandboxed preload (FND-01 sandbox:true) cannot use ESM — emit CJS.
+      rollupOptions: {
+        output: {
+          format: 'cjs',
+          entryFileNames: '[name].js',
+        },
+      },
+    },
   },
   renderer: {
     root: 'src/renderer',

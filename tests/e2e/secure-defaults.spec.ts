@@ -16,12 +16,12 @@ test('FND-01: webContents has secure webPreferences', async () => {
   });
 
   const prefs = await app.evaluate(async ({ BrowserWindow }) =>
-    BrowserWindow.getAllWindows()[0].webContents.getWebPreferences(),
+    BrowserWindow.getAllWindows()[0].webContents.getLastWebPreferences(),
   );
 
-  expect(prefs.contextIsolation).toBe(true);
-  expect(prefs.nodeIntegration).toBe(false);
-  expect(prefs.sandbox).toBe(true);
+  expect(prefs?.contextIsolation).toBe(true);
+  expect(prefs?.nodeIntegration).toBe(false);
+  expect(prefs?.sandbox).toBe(true);
 
   await app.close();
 });

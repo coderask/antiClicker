@@ -48,7 +48,7 @@ async function createWindow(): Promise<void> {
     height: 800,
     show: false, // shown on ready-to-show to avoid white-flash on slow paints
     webPreferences: {
-      preload: join(__dirname, '../preload/index.mjs'),
+      preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true, // FND-01 — explicit (default since Electron 12)
       nodeIntegration: false, // FND-01 — explicit (default since Electron 5)
       sandbox: true,          // FND-01 — explicit; overrides electron-vite scaffold default
