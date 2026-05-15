@@ -39,6 +39,13 @@ test('Phase 5: 2 instances → sidebar rows → focus → close → recent pins'
     const canvas = window.locator('canvas').first();
     await expect(canvas).toBeVisible({ timeout: 20_000 });
 
+    // Dismiss the first-run scope overlay if visible (Phase 6 — new on first run).
+    const overlay = window.locator('[data-testid="scope-overlay"]');
+    if (await overlay.isVisible({ timeout: 3_000 }).catch(() => false)) {
+      await window.locator('[data-testid="scope-overlay-dismiss"]').click();
+      await expect(overlay).not.toBeVisible({ timeout: 5_000 });
+    }
+
     // -----------------------------------------------------------------------
     // SC#5 pre-condition: recent-pins section exists (may be empty initially)
     // -----------------------------------------------------------------------

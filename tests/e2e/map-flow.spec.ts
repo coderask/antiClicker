@@ -37,6 +37,13 @@ test('Phase 4: map renders → click drops pin → launch-here → live-instance
       timeout: 15_000,
     });
 
+    // Dismiss the first-run scope overlay if visible (Phase 6 — new on first run).
+    const overlay = window.locator('[data-testid="scope-overlay"]');
+    if (await overlay.isVisible({ timeout: 3_000 }).catch(() => false)) {
+      await window.locator('[data-testid="scope-overlay-dismiss"]').click();
+      await expect(overlay).not.toBeVisible({ timeout: 5_000 });
+    }
+
     // pin-coords should be empty initially (no pin dropped).
     await expect(window.locator('[data-testid="pin-coords"]')).toHaveText('', {
       timeout: 5_000,

@@ -38,6 +38,13 @@ test('Phase 3: set pin → launch-here button → Chrome appears → counter inc
       timeout: 15_000,
     });
 
+    // Dismiss the first-run scope overlay if visible (Phase 6 — new on this run).
+    const overlay = window.locator('[data-testid="scope-overlay"]');
+    if (await overlay.isVisible({ timeout: 3_000 }).catch(() => false)) {
+      await window.locator('[data-testid="scope-overlay-dismiss"]').click();
+      await expect(overlay).not.toBeVisible({ timeout: 5_000 });
+    }
+
     // Live-instances counter should start at 0.
     await expect(window.locator('[data-testid="live-instances"]')).toHaveText(
       '0',

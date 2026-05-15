@@ -1,8 +1,9 @@
 // tests/renderer/Sidebar.test.tsx
 //
-// Phase 5: Sidebar component tests using @testing-library/react + happy-dom.
+// Phase 5 + Phase 6: Sidebar component tests using @testing-library/react + happy-dom.
 // Verifies: empty state, instance rows rendered, active row testid, click-to-focus,
 // close button stops propagation and doesn't trigger focus.
+// Phase 6 additions: verify button renders, onVerify fires.
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -23,6 +24,13 @@ function makeInstances(ids: string[]): Map<string, SidebarInstance> {
   );
 }
 
+// Default no-op props for Phase 6 additions — keeps existing test bodies clean
+const defaultPhase6Props = {
+  onVerify: vi.fn(),
+  onOpenVerificationUrls: vi.fn(),
+  verifyResults: new Map(),
+};
+
 describe('Sidebar', () => {
   it('renders empty state when no instances', () => {
     render(
@@ -31,6 +39,7 @@ describe('Sidebar', () => {
         activeId={null}
         onFocus={vi.fn()}
         onClose={vi.fn()}
+        {...defaultPhase6Props}
       />,
     );
     expect(screen.getByText(/no active instances/i)).toBeInTheDocument();
@@ -46,6 +55,7 @@ describe('Sidebar', () => {
         activeId={null}
         onFocus={vi.fn()}
         onClose={vi.fn()}
+        {...defaultPhase6Props}
       />,
     );
     // All 3 are non-active
@@ -62,6 +72,7 @@ describe('Sidebar', () => {
         activeId="id2"
         onFocus={vi.fn()}
         onClose={vi.fn()}
+        {...defaultPhase6Props}
       />,
     );
     expect(screen.getByTestId('instance-row-active')).toBeInTheDocument();
@@ -78,6 +89,7 @@ describe('Sidebar', () => {
         activeId={null}
         onFocus={onFocus}
         onClose={vi.fn()}
+        {...defaultPhase6Props}
       />,
     );
 
@@ -97,6 +109,7 @@ describe('Sidebar', () => {
         activeId={null}
         onFocus={vi.fn()}
         onClose={onClose}
+        {...defaultPhase6Props}
       />,
     );
 
@@ -105,6 +118,47 @@ describe('Sidebar', () => {
 
     expect(onClose).toHaveBeenCalledOnce();
     expect(onClose).toHaveBeenCalledWith('inst-x');
+  });
+
+  it('renders verify button for each instance (Phase 6)', () => {
+    const onVerify = vi.fn();
+    const instances = makeInstances(['verify-inst']);
+    render(
+      <Sidebar
+        instances={instances}
+        activeId={null}
+        onFocus={vi.fn()}
+        onClose={vi.fn()}
+        onVerify={onVerify}
+        onOpenVerificationUrls={vi.fn()}
+        verifyResults={new Map()}
+      />,
+    );
+    const verifyBtn = screen.getByTestId('verify-verify-inst');
+    expect(verifyBtn).toBeInTheDocument();
+    fireEvent.click(verifyBtn);
+    expect(onVerify).toHaveBeenCalledWith('verify-inst');
+  });
+
+  it('shows verify result when present (Phase 6)', () => {
+    const instances = makeInstances(['res-inst']);
+    const verifyResults = new Map([
+      ['res-inst', { match: true, reported: { lat: 35.6762, lng: 139.6503 } }],
+    ]);
+    render(
+      <Sidebar
+        instances={instances}
+        activeId={null}
+        onFocus={vi.fn()}
+        onClose={vi.fn()}
+        onVerify={vi.fn()}
+        onOpenVerificationUrls={vi.fn()}
+        verifyResults={verifyResults}
+      />,
+    );
+    const result = screen.getByTestId('verify-result-res-inst');
+    expect(result).toBeInTheDocument();
+    expect(result).toHaveTextContent('match');
   });
 
   it('clicking close button does NOT fire onFocus (stops propagation)', () => {
@@ -117,6 +171,7 @@ describe('Sidebar', () => {
         activeId={null}
         onFocus={onFocus}
         onClose={onClose}
+        {...defaultPhase6Props}
       />,
     );
 

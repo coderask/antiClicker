@@ -27,57 +27,18 @@
 import { app, BrowserWindow } from 'electron';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { readdirSync, rmSync, readFileSync, existsSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { is } from '@electron-toolkit/utils';
 import { startRendererServer, stopRendererServer } from './renderer-server.js';
 import { initConfigStore } from './config-store.js';
 import { registerIpc, closeLauncherIfAny } from './ipc.js';
+import { sweepOrphanedProfiles } from './sweep.js';
+
+// Re-export for tests that import from this module
+export { sweepOrphanedProfiles };
 
 // ESM has no __dirname global — derive it from import.meta.url.
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-/**
- * Sweep orphaned anticlicker-profile-* directories from a prior crashed session.
- * For each dir under os.tmpdir() matching the pattern, reads pid.txt and checks
- * if the PID is still alive via process.kill(pid, 0). If the PID is dead (or
- * pid.txt is missing), the dir is deleted. Best-effort — never throws.
- */
-export function sweepOrphanedProfiles(): void {
-  try {
-    const dir = tmpdir();
-    const entries = readdirSync(dir);
-    for (const entry of entries) {
-      if (!/^anticlicker-profile-/.test(entry)) continue;
-      const profileDir = join(dir, entry);
-      try {
-        const pidFile = join(profileDir, 'pid.txt');
-        if (!existsSync(pidFile)) {
-          // No sentinel — orphaned (pre-Phase 6 dir or crash before write)
-          rmSync(profileDir, { recursive: true, force: true });
-          continue;
-        }
-        const pidStr = readFileSync(pidFile, 'utf-8').trim();
-        const pid = Number(pidStr);
-        if (!Number.isInteger(pid) || pid <= 0) {
-          rmSync(profileDir, { recursive: true, force: true });
-          continue;
-        }
-        try {
-          process.kill(pid, 0); // throws ESRCH if process is dead
-          // Process is alive — leave the dir alone
-        } catch {
-          // ESRCH: process dead — orphaned dir, safe to delete
-          rmSync(profileDir, { recursive: true, force: true });
-        }
-      } catch {
-        // Individual dir error — skip it, never throw
-      }
-    }
-  } catch {
-    // readdirSync failure (e.g. permissions) — silently skip
-  }
-}
 
 async function createWindow(): Promise<void> {
   // Dev vs packaged URL switch — both branches yield an http(s):// URL so
