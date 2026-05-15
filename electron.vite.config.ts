@@ -40,5 +40,8 @@ export default defineConfig({
       rollupOptions: { input: resolve('src/renderer/index.html') },
     },
     resolve: { alias: { '@shared': resolve('src/shared') } },
+    // maplibre-gl is an ESM package that bundles worker code; pre-bundling avoids
+    // Vite dev-server issues with dynamic worker imports at runtime.
+    optimizeDeps: { include: ['maplibre-gl'] },
   },
 });
