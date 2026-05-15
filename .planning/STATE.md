@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: phase-complete
-stopped_at: Phase 00 verification complete; ready to plan Phase 01
-last_updated: "2026-05-15T13:10:00.000Z"
-last_activity: 2026-05-15 -- Phase 00 complete (7/7 plans, all FND tests green)
+stopped_at: Phase 01 verification complete; ready to plan Phase 02
+last_updated: "2026-05-15T14:00:00.000Z"
+last_activity: 2026-05-15 -- Phase 01 complete (3/3 plans, all geolocation tests green)
 progress:
   total_phases: 7
-  completed_phases: 1
-  total_plans: 7
-  completed_plans: 7
-  percent: 14
+  completed_phases: 2
+  total_plans: 10
+  completed_plans: 10
+  percent: 28
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-14)
 
 **Core value:** One click on a map = a Chrome window that *is* at that location.
-**Current focus:** Phase 00 complete — next is Phase 01 (CDP Geolocation Primitive CLI)
+**Current focus:** Phase 01 complete — CDP geolocation spoof proven; ready for Phase 02 (multi-instance launcher)
 
 ## Current Position
 
-Phase: 00 (foundation-bootstrap) — COMPLETE
-Plan: 7 of 7
-Status: Phase 00 verification passed
-Last activity: 2026-05-15 -- All 7 plans done; npm run test green (7 unit + 3 e2e)
+Phase: 01 (cdp-cli-primitive) — COMPLETE
+Plan: 3 of 3
+Status: Phase 01 verification passed — all 4 success criteria met
+Last activity: 2026-05-15 -- All 3 plans done; 25 unit tests + 4 integration tests green
 
-Progress: [█░░░░░░░░░] 14%
+Progress: [██░░░░░░░░] 28%
 
 ## Performance Metrics
 
@@ -45,11 +45,12 @@ Progress: [█░░░░░░░░░] 14%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 00 | 7 | ~6h | ~50min |
+| 01 | 3 | ~55min | ~18min |
 
 **Recent Trend:**
 
-- Last 5 plans: 00-03, 00-04, 00-05, 00-06, plus Wave 1 bundle
-- Trend: smooth after switching from worktree-isolated subagent dispatch to inline execution
+- Last 5 plans: 01-01 (CLI), 01-02 (unit tests), 01-03 (integration tests)
+- Trend: fast execution; Phase 1 completed in under an hour
 
 *Updated after each plan completion*
 
@@ -66,6 +67,8 @@ Recent decisions affecting current work:
 - Phase 0: Sandboxed preload must be CJS (not ESM) — electron-vite preload build forces `output.format = 'cjs'` and `entryFileNames = '[name].js'`. Main loads `../preload/index.js`, not `.mjs`.
 - Phase 0: `tsconfig.json` uses project references (`composite: true`) to node + web sub-configs so the bare `tsc --noEmit` in the build script walks both.
 - Phase 0: FND-01 e2e uses `webContents.getLastWebPreferences()` (Electron 35 API), not `getWebPreferences()` (removed).
+- Phase 1: launchPersistentContext with geolocation+permissions in constructor options is the canonical pattern — atomic grant, context-scoped, no race window.
+- Phase 1: data: and about:blank URLs are non-secure origins in Chromium — geolocation requires localhost or https://. Use 127.0.0.1 HTTP server for integration test fixtures.
 
 ### Pending Todos
 
@@ -73,9 +76,9 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-None for Phase 1. Carry-forward research flags:
+None for Phase 2. Carry-forward research flags:
 
-- Phase 1: Verify Playwright 1.60 `launchPersistentContext` API shape against bundled Chromium 136
+- Phase 2: Port ephemeral selection — `--remote-debugging-port=0` + read DevToolsActivePort (Pitfall 8)
 - Phase 4: MapLibre 5 raster attribution requirements (EOX S2cloudless — attribution must be visible per tile-source terms)
 - Phase 6: Bundled-Chromium packaging via `extraResources` + macOS notarization for spawned Chromium child
 
@@ -88,5 +91,5 @@ None for Phase 1. Carry-forward research flags:
 ## Session Continuity
 
 Last session: 2026-05-15
-Stopped at: Phase 00 complete; ready to plan Phase 01 (CDP CLI)
+Stopped at: Phase 01 complete; ready to plan Phase 02 (multi-instance launcher)
 Resume file: None

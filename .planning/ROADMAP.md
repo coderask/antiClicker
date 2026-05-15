@@ -11,7 +11,7 @@ AntiClicker is a single-purpose desktop tool whose load-bearing primitive is one
 - Decimal phases (e.g., 2.1): Urgent insertions (marked INSERTED)
 
 - [x] **Phase 0: Foundation / Bootstrap** - Secure Electron 35 shell, localhost-served renderer, electron-store config slot
-- [ ] **Phase 1: CDP Geolocation Primitive (CLI)** - Prove the spoof in a standalone CLI before any shell or map work
+- [x] **Phase 1: CDP Geolocation Primitive (CLI)** - Prove the spoof in a standalone CLI before any shell or map work
 - [ ] **Phase 2: Multi-Instance Launcher Module** - Parallel isolated Chromes via ephemeral profiles + ports + live setGeolocation
 - [ ] **Phase 3: Electron Shell + IPC** - Move launcher into main; freeze contextBridge IPC contract via placeholder UI
 - [ ] **Phase 4: Map UI** - MapLibre + EOX satellite default, Google Maps opt-in, draggable pin, manual entry, paste-from-URL
@@ -51,7 +51,11 @@ Plans:
   2. When the launched Chrome navigates to `https://browserleaks.com/geo`, `navigator.geolocation.getCurrentPosition()` reports the supplied coordinates AND no permission prompt is shown to the user
   3. Clicking a link in the launched Chrome to a different origin (e.g., `https://www.google.com/maps`) does not break the spoof — `getCurrentPosition()` on the new origin still reports the supplied coordinates (context-scoped override survives cross-origin navigation)
   4. The CLI exits cleanly on Ctrl-C: the spawned Chrome closes and its temporary profile directory is removed from `os.tmpdir()`
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [x] 01-01-PLAN.md — CLI prototype: scripts/cli-prototype.ts with parseCliArgs + launchPersistentContext
+- [x] 01-02-PLAN.md — Vitest unit tests: argv parsing + bounds validation (18 tests)
+- [x] 01-03-PLAN.md — Playwright integration test: hermetic geolocation spoof + cleanup (4 tests)
 **UI hint**: no
 
 ### Phase 2: Multi-Instance Launcher Module
@@ -135,8 +139,8 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 0. Foundation / Bootstrap | 0/TBD | Not started | - |
-| 1. CDP Geolocation Primitive (CLI) | 0/TBD | Not started | - |
+| 0. Foundation / Bootstrap | 7/7 | Complete | 2026-05-15 |
+| 1. CDP Geolocation Primitive (CLI) | 3/3 | Complete | 2026-05-15 |
 | 2. Multi-Instance Launcher Module | 0/TBD | Not started | - |
 | 3. Electron Shell + IPC | 0/TBD | Not started | - |
 | 4. Map UI | 0/TBD | Not started | - |
