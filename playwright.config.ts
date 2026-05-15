@@ -1,12 +1,12 @@
 // playwright.config.ts
-// Wave 0 Electron e2e config. Single "electron" project; specs use `_electron.launch()`
-// from @playwright/test against out/main/index.js (built in plan 00-05). Traces retained
-// only on failure to keep test-results/ small in CI.
+// Multi-project Playwright config:
+//   - "electron": Electron e2e tests in tests/e2e/ (use _electron.launch)
+//   - "cli": Phase 1 CLI geolocation integration tests in tests/cli/ (use Playwright Chromium directly)
+// Traces retained only on failure to keep test-results/ small.
 
 import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
-  testDir: 'tests/e2e',
   timeout: 60_000,
   use: {
     trace: 'retain-on-failure',
@@ -15,6 +15,11 @@ export default defineConfig({
     {
       name: 'electron',
       testDir: 'tests/e2e',
+    },
+    {
+      name: 'cli',
+      testDir: 'tests/cli',
+      testMatch: '**/*.spec.ts',
     },
   ],
 });
