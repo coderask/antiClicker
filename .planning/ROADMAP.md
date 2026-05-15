@@ -125,7 +125,14 @@ Plans:
   3. Dragging a pin associated with a running instance (or invoking a "Re-target to current pin" action) calls `context.setGeolocation` via IPC; on the next call to `navigator.geolocation.getCurrentPosition()` in that Chrome, the new coordinates are reported — no relaunch, no flicker
   4. Clicking the close button on an instance row terminates that Chrome (cleans its profile dir, removes its pin from the map, removes its sidebar row) without affecting the other running instances
   5. A "Recent pins" panel shows the last N=10 pin coordinates used in the current session for quick re-use; the list clears entirely when the app quits (no disk persistence)
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+- [x] 05-RESEARCH.md — Multi-instance UX research (N markers, state model, ring buffer)
+- [x] 05-01-PLAN.md — App state model: instances Map + draft pin + active highlight
+- [x] 05-02-PLAN.md — Sidebar component with instance rows + close + focus
+- [x] 05-03-PLAN.md — MapView N colored markers + per-marker drag → setGeo
+- [x] 05-04-PLAN.md — RecentPins ring buffer + populate-form on click
+- [x] 05-05-PLAN.md — Tests: ringBuffer unit + Sidebar component + multi-instance e2e
 **UI hint**: yes
 
 ### Phase 6: Verification + Polish + Package
@@ -158,7 +165,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6
 | 2. Multi-Instance Launcher Module | 3/3 | Complete | 2026-05-15 |
 | 3. Electron Shell + IPC | 4/4 | Complete | 2026-05-15 |
 | 4. Map UI | 4/4 | Complete | 2026-05-15 |
-| 5. Multi-Instance UX + Live Update | 0/TBD | Not started | - |
+| 5. Multi-Instance UX + Live Update | 5/5 | Complete | 2026-05-15 |
 | 6. Verification + Polish + Package | 0/TBD | Not started | - |
 
 ---

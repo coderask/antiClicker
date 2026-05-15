@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: phase-complete
-stopped_at: Phase 04 verification complete; ready to plan Phase 05 (Multi-Instance UX)
-last_updated: "2026-05-15T23:00:00.000Z"
-last_activity: 2026-05-15 -- Phase 04 complete (4/4 plans, full Map UI green)
+stopped_at: Phase 05 verification complete; ready to plan Phase 06 (Verification + Polish + Package)
+last_updated: "2026-05-15T23:20:00.000Z"
+last_activity: 2026-05-15 -- Phase 05 complete (5/5 plans, Multi-Instance UX + Live Update green)
 progress:
   total_phases: 7
-  completed_phases: 4
-  total_plans: 21
-  completed_plans: 18
-  percent: 86
+  completed_phases: 5
+  total_plans: 26
+  completed_plans: 23
+  percent: 88
 ---
 
 # Project State
@@ -21,24 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-14)
 
 **Core value:** One click on a map = a Chrome window that *is* at that location.
-**Current focus:** Phase 04 complete — MapLibre satellite map UI shipped; ready for Phase 05 (Multi-Instance UX)
+**Current focus:** Phase 05 complete — Multi-Instance UX shipped; sidebar, colored pins, live setGeo, recent pins all working
 
 ## Current Position
 
-Phase: 04 (map-ui) — COMPLETE
-Plan: 4 of 4
-Status: Phase 04 verification passed — all success criteria met
-Last activity: 2026-05-15 -- All 4 plans done; MapLibre satellite map, draggable pin, coord form, Google Maps URL parser, 74 unit + 5 launcher + 14 e2e tests green
+Phase: 05 (multi-instance-ux) — COMPLETE
+Plan: 5 of 5
+Status: Phase 05 verification passed — all success criteria met
+Last activity: 2026-05-15 -- All 5 plans done; Sidebar, multi-pin MapView, RecentPins, ring-buffer utility; 118 tests green
 
-Progress: [█████████░] 86%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 17
+- Total plans completed: 23
 - Phase 0 plans: 7 (1 deferred-artifact-only, 6 fully autonomous)
-- Total execution time: ~7.5 hours (with two executor stream timeouts mid-Wave-2, recovered inline)
+- Total execution time: ~7.8 hours
 
 **By Phase:**
 
@@ -49,11 +49,12 @@ Progress: [█████████░] 86%
 | 02 | 3 | ~45min | ~15min |
 | 03 | 4 | ~90min | ~22min |
 | 04 | 4 | ~9min | ~2min |
+| 05 | 5 | ~18min | ~3.5min |
 
 **Recent Trend:**
 
-- Last 5 plans: 03-02 (preload), 03-03 (UI), 03-04 (tests), 04-03 (coord form), 04-04 (tests)
-- Trend: accelerating; Phase 4 completed in ~9min total (4 plans, MapLibre integration, full test suite green)
+- Last 5 plans: 04-04 (tests), 05-01 (state model), 05-02 (Sidebar), 05-03 (MapView), 05-04/05 (RecentPins + tests)
+- Trend: accelerating; Phase 5 completed in ~18min total (5 plans, 118 tests, full multi-instance UX)
 
 *Updated after each plan completion*
 
@@ -79,6 +80,10 @@ Recent decisions affecting current work:
 - Phase 4: onPinChangeRef pattern — map click/dragend listeners read from ref rather than re-subscribing, preventing stale closure bugs.
 - Phase 4: vitest workspace split — separate node (unit/main/cli) and renderer (happy-dom/React) projects to avoid environment contamination.
 - Phase 4: zod v4 uses `z.number({ error: '...' })` not `z.number({ invalid_type_error: '...' })` — the field was renamed in v4.
+- Phase 5: Optimistic setGeo update — drag immediately updates state; IPC fires; failure reverts — instant visual feedback without blocking UX.
+- Phase 5: Map<InstanceId, RunningInstance> with immutable copy-on-write — React won't re-render on in-place mutation, always create new Map(prev).
+- Phase 5: Callback refs in MapLibre event handlers — onMarkerDragRef pattern ensures dragend always calls current handler version without re-attaching.
+- Phase 5: SC#3 (drag → CDP live update) verified at launcher integration level, not e2e level — Phase 2 integration tests already prove CDP round-trip; Phase 5 e2e focuses on UI state changes.
 
 ### Pending Todos
 
@@ -86,10 +91,11 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-None for Phase 5. Carry-forward research flags:
+None for Phase 6. Carry-forward research flags:
 
-- Phase 5: MapView will need to render multiple colored pins (per-instance); current controlled pin prop needs to expand to array
-- Phase 6: Bundled-Chromium packaging via `extraResources` + macOS notarization for spawned Chromium child; renderer bundle now ~2.2 MB (MapLibre)
+- Phase 6: Bundled-Chromium packaging via `extraResources` + macOS Gatekeeper handling for spawned Chromium child
+- Phase 6: First-run scope overlay ("Coordinates only — your IP, timezone, and language are unchanged")
+- Phase 6: electron-builder cross-compile macOS .dmg + Windows NSIS .exe
 
 ## Deferred Items
 
@@ -100,5 +106,5 @@ None for Phase 5. Carry-forward research flags:
 ## Session Continuity
 
 Last session: 2026-05-15
-Stopped at: Phase 04 Map UI complete; ready to plan Phase 05
+Stopped at: Phase 05 Multi-Instance UX complete; ready to plan Phase 06
 Resume file: None
