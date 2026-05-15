@@ -12,7 +12,7 @@ AntiClicker is a single-purpose desktop tool whose load-bearing primitive is one
 
 - [x] **Phase 0: Foundation / Bootstrap** - Secure Electron 35 shell, localhost-served renderer, electron-store config slot
 - [x] **Phase 1: CDP Geolocation Primitive (CLI)** - Prove the spoof in a standalone CLI before any shell or map work
-- [ ] **Phase 2: Multi-Instance Launcher Module** - Parallel isolated Chromes via ephemeral profiles + ports + live setGeolocation
+- [x] **Phase 2: Multi-Instance Launcher Module** - Parallel isolated Chromes via ephemeral profiles + ports + live setGeolocation
 - [ ] **Phase 3: Electron Shell + IPC** - Move launcher into main; freeze contextBridge IPC contract via placeholder UI
 - [ ] **Phase 4: Map UI** - MapLibre + EOX satellite default, Google Maps opt-in, draggable pin, manual entry, paste-from-URL
 - [ ] **Phase 5: Multi-Instance UX + Live Update** - Sidebar, per-instance colored pins, live setGeolocation on pin drag
@@ -69,7 +69,11 @@ Plans:
   3. Each instance binds an ephemeral `--remote-debugging-port=0`; the actual port is read from `<userDataDir>/DevToolsActivePort` — no two instances ever collide on port 9222, and a test that launches/closes/re-launches 10 instances back-to-back never fails on `EADDRINUSE`
   4. Closing any single launched Chrome (via the window's close button or `kill -TERM`) fires `browser.on('disconnected')` in the launcher, which deletes that instance's profile dir from disk and removes its entry from the in-memory registry
   5. Calling `launcher.setGeo(instanceId, newCoords)` on a running instance changes the value reported by `navigator.geolocation.getCurrentPosition()` on the next call without relaunching the browser
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [x] 02-01-PLAN.md — Launcher module (`src/launcher/` + shared CoordsSchema)
+- [x] 02-02-PLAN.md — Registry unit tests + shared HTTP fixture helper
+- [x] 02-03-PLAN.md — Integration tests (5 specs covering all success criteria)
 **UI hint**: no
 
 ### Phase 3: Electron Shell + IPC
