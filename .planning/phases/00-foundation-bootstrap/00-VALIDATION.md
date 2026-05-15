@@ -29,6 +29,7 @@ created: 2026-05-14
 
 - **After every task commit:** Run `npm run test:unit`
 - **After every plan wave:** Run `npm run test` (full suite — includes Electron launch e2e)
+- **After Wave 2 merge (before dispatching Wave 3):** Run `npm run build` — must exit 0. Belt-and-suspenders for the late-integration concern: plans 00-02, 00-03, 00-04 use grep-only per-task `<verify>` blocks and defer compilation to Wave 3's 00-05. If any forward-import contract mismatch slipped through, this gate surfaces it before 00-05 starts.
 - **Before `/gsd-verify-work`:** Full suite must be green
 - **Max feedback latency:** 60 seconds
 
