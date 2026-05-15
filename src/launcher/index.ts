@@ -170,5 +170,13 @@ export function createLauncher(): Launcher {
       existing.push(handler);
       listeners.set(event, existing);
     },
-  };
+
+    // Test-only escape hatch: returns the raw BrowserContext for a running
+    // instance. Used exclusively by tests/launcher/*.spec.ts to open pages
+    // and verify spoofed coordinates. Not part of the public Launcher
+    // interface — production callers (Phase 3 IPC) must not depend on this.
+    _testContext(id: InstanceId): import('playwright').BrowserContext {
+      return registry.getOrThrow(id).context;
+    },
+  } as Launcher & { _testContext: (id: InstanceId) => import('playwright').BrowserContext };
 }
