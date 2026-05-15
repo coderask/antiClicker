@@ -1,3 +1,19 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: executing
+stopped_at: Roadmap and state initialized; ready to plan Phase 0
+last_updated: "2026-05-15T07:28:58.842Z"
+last_activity: 2026-05-15 -- Phase 00 execution started
+progress:
+  total_phases: 7
+  completed_phases: 0
+  total_plans: 7
+  completed_plans: 0
+  percent: 0
+---
+
 # Project State
 
 ## Project Reference
@@ -5,20 +21,21 @@
 See: .planning/PROJECT.md (updated 2026-05-14)
 
 **Core value:** One click on a map = a Chrome window that *is* at that location.
-**Current focus:** Phase 0 — Foundation / Bootstrap
+**Current focus:** Phase 00 — foundation-bootstrap
 
 ## Current Position
 
-Phase: 0 of 6 (Foundation / Bootstrap)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-05-14 — Roadmap created (7 phases, 32/32 v1 requirements mapped)
+Phase: 00 (foundation-bootstrap) — EXECUTING
+Plan: 1 of 7
+Status: Executing Phase 00
+Last activity: 2026-05-15 -- Phase 00 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
 **Velocity:**
+
 - Total plans completed: 0
 - Average duration: —
 - Total execution time: —
@@ -30,6 +47,7 @@ Progress: [░░░░░░░░░░] 0%
 | - | - | - | - |
 
 **Recent Trend:**
+
 - Last 5 plans: —
 - Trend: —
 
@@ -53,6 +71,7 @@ None yet.
 ### Blockers/Concerns
 
 None yet. Three research-flagged areas to validate during their respective phases:
+
 - Phase 1: Verify Playwright 1.60 `launchPersistentContext` API shape against bundled Chromium 136
 - Phase 4: MapLibre 5 raster attribution requirements + clean basemap hot-swap pattern
 - Phase 6: Bundled-Chromium packaging via `extraResources` + macOS notarization for spawned Chromium child
