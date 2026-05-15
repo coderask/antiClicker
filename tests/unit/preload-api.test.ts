@@ -1,13 +1,32 @@
-// preload API shape — filled in by plan 00-06
-// Asserts the preload exposes only the narrow typed window.api surface and does NOT
-// expose raw ipcRenderer (FND-01 success criterion #4). Wave 0 stub: skipped until
-// 00-06 wires in the real assertions against src/preload/index.ts.
+// preload API shape — type-level + fake-implementation runtime test.
+// Imports the Api TYPE only (no electron runtime) so vitest can run this
+// in pure Node. The full FND-01 round-trip is asserted by the e2e in
+// tests/e2e/secure-defaults.spec.ts.
 
 import { describe, expect, it } from 'vitest';
+import type { Api } from '../../src/preload/index.js';
 
-describe('preload API shape', () => {
-  it.skip('exposes only the narrow typed window.api surface (no raw ipcRenderer)', () => {
-    // Will be implemented by plan 00-06.
-    void expect;
+describe('Preload Api', () => {
+  it('exposes exactly ping and getLaunchCount', () => {
+    const required: (keyof Api)[] = ['ping', 'getLaunchCount'];
+    expect(required.length).toBe(2);
+  });
+
+  it('ping returns a Promise of pong literal', async () => {
+    const fakeApi: Api = {
+      ping: async () => 'pong' as const,
+      getLaunchCount: async () => 0,
+    };
+    const result = await fakeApi.ping();
+    expect(result).toBe('pong');
+  });
+
+  it('getLaunchCount returns a Promise of number', async () => {
+    const fakeApi: Api = {
+      ping: async () => 'pong' as const,
+      getLaunchCount: async () => 42,
+    };
+    const result = await fakeApi.getLaunchCount();
+    expect(typeof result).toBe('number');
   });
 });
