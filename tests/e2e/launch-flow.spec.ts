@@ -1,15 +1,18 @@
 // tests/e2e/launch-flow.spec.ts
 //
 // Phase 3 end-to-end: verifies the full IPC chain from renderer → main → Playwright launcher.
+// Updated for Phase 4 UI: the old "launch-button" hardcoded to Tokyo is replaced by
+// the MapUI's launch-here-button. This test sets the pin via the coord input form first.
 //
 // Flow:
 //   1. Launch the built Electron app.
 //   2. Wait for the app to be ready (ping = "pong").
-//   3. Click the "Launch at Tokyo" button.
-//   4. Assert live-instances counter reaches "1" (Chrome window appeared).
-//   5. Call window.api.list() via evaluate — assert length=1, correct coordinates.
-//   6. Call window.api.close(id) via evaluate — assert counter returns to "0".
-//   7. Close the app.
+//   3. Enter Tokyo coordinates into the coord input form and submit.
+//   4. Click the "Launch here" button.
+//   5. Assert live-instances counter reaches "1" (Chrome window appeared).
+//   6. Call window.api.list() via evaluate — assert length=1, correct coordinates.
+//   7. Call window.api.close(id) via evaluate — assert counter returns to "0".
+//   8. Close the app.
 //
 // Notes:
 //   - test.setTimeout is set to 90s because Playwright's bundled Chromium launch can
@@ -20,7 +23,7 @@
 import { _electron as electron, expect, test } from '@playwright/test';
 import { join } from 'node:path';
 
-test('Phase 3: launch button → Chrome appears → counter increments → close → counter decrements', async () => {
+test('Phase 3: set pin → launch-here button → Chrome appears → counter increments → close → counter decrements', async () => {
   test.setTimeout(90_000);
 
   const app = await electron.launch({
@@ -41,8 +44,18 @@ test('Phase 3: launch button → Chrome appears → counter increments → close
       { timeout: 5_000 },
     );
 
-    // Click the Launch button.
-    await window.locator('[data-testid="launch-button"]').click();
+    // Enter Tokyo coordinates via the coord input form to set the pin.
+    await window.locator('[data-testid="lat-input"]').fill('35.6762');
+    await window.locator('[data-testid="lng-input"]').fill('139.6503');
+    await window.locator('[data-testid="coord-submit"]').click();
+
+    // Wait for pin-coords to reflect the submitted coordinates.
+    await expect(window.locator('[data-testid="pin-coords"]')).not.toHaveText('', {
+      timeout: 5_000,
+    });
+
+    // Click the Launch here button.
+    await window.locator('[data-testid="launch-here-button"]').click();
 
     // Counter should increment to 1 within 30s (Chrome launch + IPC round-trip).
     await expect(window.locator('[data-testid="live-instances"]')).toHaveText(
