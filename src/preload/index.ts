@@ -1,12 +1,11 @@
 // src/preload/index.ts
 //
 // FND-01 invariant #4: contextBridge preload exposes ONLY a narrow typed API
-// surface — no raw ipcRenderer, no require, no electronAPI passthrough. The
-// renderer's `window.api` has exactly SEVEN methods, all backed by typed
-// IpcChannels constants from the shared module.
+// surface — no raw ipcRenderer, no require, no electronAPI passthrough.
 //
 // Phase 0 surface: ping, getLaunchCount
 // Phase 3 surface: launch, setGeo, close, list, onInstanceClosed
+// Phase 6 surface: verifySpoof, openVerificationUrls, markFirstRunSeen, getFirstRunSeen
 //
 // onInstanceClosed uses the push-event pattern (ipcRenderer.on + removeListener)
 // instead of ipcRenderer.invoke. The returned () => void is the unsubscribe
@@ -58,6 +57,31 @@ const api = {
     return () =>
       ipcRenderer.removeListener(IpcChannels.LauncherInstanceClosed, listener);
   },
+
+  // Phase 6 — verification + first-run
+  /** Return whether the user has seen the first-run scope overlay. */
+  getFirstRunSeen: (): Promise<boolean> =>
+    ipcRenderer.invoke(IpcChannels.ConfigGetFirstRunSeen),
+
+  /** Persist that the user has dismissed the first-run scope overlay. */
+  markFirstRunSeen: (): Promise<void> =>
+    ipcRenderer.invoke(IpcChannels.ConfigMarkFirstRunSeen),
+
+  /**
+   * Verify that a running instance's geolocation matches the expected coords.
+   * Returns { reported: {lat, lng}, expected: {lat, lng}, match: boolean }.
+   */
+  verifySpoof: (
+    id: string,
+  ): Promise<{
+    reported: { lat: number; lng: number };
+    expected: { lat: number; lng: number };
+    match: boolean;
+  }> => ipcRenderer.invoke(IpcChannels.LauncherVerifySpoof, { id }),
+
+  /** Open browserleaks.com geo/ip/timezone tabs in the launched Chrome. */
+  openVerificationUrls: (id: string): Promise<void> =>
+    ipcRenderer.invoke(IpcChannels.LauncherOpenVerificationUrls, { id }),
 } as const;
 
 export type Api = typeof api;

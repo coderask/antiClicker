@@ -25,8 +25,9 @@
 import { useEffect, useState } from 'react';
 import MapView, { type PinCoords } from './map/MapView';
 import CoordInput from './CoordInput';
-import Sidebar from './Sidebar';
+import Sidebar, { type VerifyResult } from './Sidebar';
 import RecentPins from './RecentPins';
+import ScopeOverlay from './ScopeOverlay';
 import { pushBounded } from './utils/ringBuffer';
 
 // ---------------------------------------------------------------------------
@@ -76,6 +77,12 @@ export default function App() {
   const [activeId, setActiveId] = useState<InstanceId | null>(null);
   const [recentPins, setRecentPins] = useState<PinCoords[]>([]);
 
+  // ------------------------------------------------------------------
+  // Phase 6 — verify + first-run overlay state
+  // ------------------------------------------------------------------
+  const [showOverlay, setShowOverlay] = useState(false);
+  const [verifyResults, setVerifyResults] = useState<Map<InstanceId, VerifyResult>>(new Map());
+
   // flyToTrigger: signals MapView to animate to a location
   const [flyToTrigger, setFlyToTrigger] = useState<
     { latitude: number; longitude: number; counter: number } | undefined
@@ -88,6 +95,10 @@ export default function App() {
     // Phase 0: round-trip smoke tests
     window.api.ping().then(setPong).catch(() => setPong('FAIL'));
     window.api.getLaunchCount().then(setLaunchCount).catch(() => setLaunchCount(-1));
+    // Phase 6: show first-run scope overlay if not yet dismissed
+    window.api.getFirstRunSeen().then((seen) => {
+      if (!seen) setShowOverlay(true);
+    }).catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -219,6 +230,36 @@ export default function App() {
     setFlyToTrigger((prev) => ({ ...coords, counter: (prev?.counter ?? 0) + 1 }));
   };
 
+  // Phase 6 — dismiss first-run overlay and persist the flag
+  const handleDismissOverlay = (): void => {
+    setShowOverlay(false);
+    window.api.markFirstRunSeen().catch(() => undefined);
+  };
+
+  /** Verify spoofed coords for a running instance */
+  const handleVerify = async (id: InstanceId): Promise<void> => {
+    try {
+      const result = await window.api.verifySpoof(id);
+      setVerifyResults((prev) => {
+        const next = new Map(prev);
+        next.set(id, { match: result.match, reported: result.reported });
+        return next;
+      });
+    } catch {
+      // If verify fails, mark as mismatch
+      setVerifyResults((prev) => {
+        const next = new Map(prev);
+        next.set(id, { match: false, reported: { lat: 0, lng: 0 } });
+        return next;
+      });
+    }
+  };
+
+  /** Open browserleaks verification URLs in a running instance */
+  const handleOpenVerificationUrls = (id: InstanceId): void => {
+    window.api.openVerificationUrls(id).catch(() => undefined);
+  };
+
   const protocol = window.location.protocol;
 
   return (
@@ -232,6 +273,8 @@ export default function App() {
         fontFamily: 'system-ui, sans-serif',
       }}
     >
+      {/* Phase 6 — first-run scope overlay */}
+      {showOverlay && <ScopeOverlay onDismiss={handleDismissOverlay} />}
       {/* Main content row: map + sidebar */}
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
         {/* Map — fills available horizontal space */}
@@ -253,6 +296,9 @@ export default function App() {
             activeId={activeId}
             onFocus={handleFocusInstance}
             onClose={(id) => void handleClose(id)}
+            onVerify={(id) => void handleVerify(id)}
+            onOpenVerificationUrls={handleOpenVerificationUrls}
+            verifyResults={verifyResults}
           />
           <RecentPins
             pins={recentPins}
