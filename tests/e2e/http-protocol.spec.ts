@@ -1,12 +1,24 @@
-// FND-02 — filled in by plan 00-06
-// Asserts the renderer is loaded over http:// in both dev and packaged builds (never
-// file://). Concretely: window.url() starts with "http://" and window.location.protocol
-// is "http:". Wave 0 stub: skipped until 00-06 wires in the real e2e launch + assertion.
+// FND-02 — renderer loaded over http://, never file://.
+// Asserts both the Playwright window.url() (the actual loaded URL) and the
+// renderer's own [data-testid="protocol"] readout to catch the case where
+// the URL is right but the renderer's location object disagrees.
 
 import { _electron as electron, expect, test } from '@playwright/test';
+import { join } from 'node:path';
 
-test.skip('FND-02: renderer served over http:// (not file://)', async () => {
-  // Will be implemented by plan 00-06.
-  void electron;
-  void expect;
+test('FND-02: renderer loaded over http://', async () => {
+  const app = await electron.launch({
+    args: [join(process.cwd(), 'out/main/index.js')],
+  });
+  const window = await app.firstWindow();
+
+  const url = window.url();
+  expect(url.startsWith('http://')).toBe(true);
+  expect(url.startsWith('file://')).toBe(false);
+
+  await expect(window.locator('[data-testid="protocol"]')).toHaveText('http:', {
+    timeout: 10000,
+  });
+
+  await app.close();
 });
