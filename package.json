@@ -29,10 +29,18 @@
     },
     "files": [
       "out/**/*",
-      "package.json"
+      "package.json",
+      "node_modules/playwright/**",
+      "node_modules/playwright-core/**",
+      "node_modules/playwright-chromium/**"
+    ],
+    "asarUnpack": [
+      "**/node_modules/playwright/.local-browsers/**",
+      "**/node_modules/playwright-core/.local-browsers/**"
     ],
     "mac": {
       "category": "public.app-category.developer-tools",
+      "icon": "build/icon.png",
       "target": [
         {
           "target": "dmg",
@@ -45,6 +53,7 @@
       "identity": null
     },
     "win": {
+      "icon": "build/icon.png",
       "target": [
         {
           "target": "nsis",
