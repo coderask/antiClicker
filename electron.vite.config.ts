@@ -10,7 +10,12 @@ import { resolve } from 'node:path';
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
+    // externalizeDepsPlugin only externalizes `dependencies` from package.json.
+    // playwright is a devDependency that the main process uses at runtime (Phase 3+),
+    // so we must explicitly include it in the externalize list. Without this,
+    // vite bundles playwright's coreBundle.js and its internal lazy require of
+    // `chromium-bidi` gets hoisted to a static ESM import that Node can't resolve.
+    plugins: [externalizeDepsPlugin({ include: ['playwright', 'playwright-core'] })],
     build: { outDir: 'out/main' },
     resolve: { alias: { '@shared': resolve('src/shared') } },
   },
