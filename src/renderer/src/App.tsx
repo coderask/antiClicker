@@ -1,18 +1,58 @@
 // src/renderer/src/App.tsx
 //
-// Phase 4 — Map UI
+// Phase 5 — Multi-Instance UX + Live Update
 //
 // Layout:
-//   - Full-viewport flex column
-//   - Map fills available space (flex: 1)
-//   - Bottom bar: coord input, readout, launch button, live-instances counter
-//   - Collapsible footer: Phase 0 verification rows (testids preserved per constraint)
+//   flex-column (100vh)
+//     flex-row (flex: 1, min-height: 0)
+//       div (flex: 1, map canvas)
+//       Sidebar (280px, right panel)
+//         - Running instances list
+//         - Recent pins section
+//     div (bottom bar — coord input, draft pin readout, launch button, live count)
+//     details (Phase 0 verification rows — preserved)
 //
-// Pin state is lifted here; MapView and CoordInput are controlled components.
+// State model:
+//   - instances:  Map<InstanceId, RunningInstance> — running Chrome instances
+//   - draftPin:   PinCoords | null — un-launched click (replacing single 'pin')
+//   - activeId:   InstanceId | null — currently focused instance
+//   - recentPins: PinCoords[]       — ring buffer of last 10 launched coords (session only)
+//
+// On launch: draft pin becomes a tracked instance; instance gets a color from the 8-color palette.
+// On drag:   instance marker dragend → setGeo IPC (optimistic update).
+// On close:  IPC close → onInstanceClosed push event removes from Map.
 
 import { useEffect, useState } from 'react';
 import MapView, { type PinCoords } from './map/MapView';
 import CoordInput from './CoordInput';
+import Sidebar from './Sidebar';
+import RecentPins from './RecentPins';
+import { pushBounded } from './utils/ringBuffer';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+type InstanceId = string;
+
+interface RunningInstance {
+  id: InstanceId;
+  coords: PinCoords;
+  color: string;
+}
+
+// ---------------------------------------------------------------------------
+// Color palette (8-color cycle for instance markers)
+// ---------------------------------------------------------------------------
+const COLORS = [
+  '#e74c3c', // red
+  '#3498db', // blue
+  '#2ecc71', // green
+  '#f39c12', // orange
+  '#9b59b6', // purple
+  '#1abc9c', // teal
+  '#e67e22', // dark orange
+  '#34495e', // dark slate
+];
 
 export default function App() {
   // ------------------------------------------------------------------
@@ -29,9 +69,14 @@ export default function App() {
   const [launchLoading, setLaunchLoading] = useState<boolean>(false);
 
   // ------------------------------------------------------------------
-  // Phase 4 — map + pin state
+  // Phase 5 — multi-instance state
   // ------------------------------------------------------------------
-  const [pin, setPin] = useState<PinCoords | null>(null);
+  const [instances, setInstances] = useState<Map<InstanceId, RunningInstance>>(new Map());
+  const [draftPin, setDraftPin] = useState<PinCoords | null>(null);
+  const [activeId, setActiveId] = useState<InstanceId | null>(null);
+  const [recentPins, setRecentPins] = useState<PinCoords[]>([]);
+
+  // flyToTrigger: signals MapView to animate to a location
   const [flyToTrigger, setFlyToTrigger] = useState<
     { latitude: number; longitude: number; counter: number } | undefined
   >(undefined);
@@ -46,9 +91,15 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    // Phase 3: subscribe to instance-closed push events from main.
-    const unsubscribe = window.api.onInstanceClosed((_id: string) => {
+    // Phase 3/5: subscribe to instance-closed push events from main.
+    const unsubscribe = window.api.onInstanceClosed((id: string) => {
+      setInstances((prev) => {
+        const next = new Map(prev);
+        next.delete(id);
+        return next;
+      });
       setLiveCount((prev) => Math.max(0, prev - 1));
+      setActiveId((prev) => (prev === id ? null : prev));
     });
     return unsubscribe;
   }, []);
@@ -56,12 +107,40 @@ export default function App() {
   // ------------------------------------------------------------------
   // Handlers
   // ------------------------------------------------------------------
+
+  /** Launch a new Chrome at the current draft pin coords */
   const handleLaunch = async (): Promise<void> => {
-    if (!pin) return;
+    if (!draftPin) return;
     setLaunchLoading(true);
     setLaunchError(null);
     try {
-      await window.api.launch({ latitude: pin.latitude, longitude: pin.longitude });
+      // Pick color based on current instance count (before adding new one)
+      const color = COLORS[instances.size % COLORS.length];
+
+      const result = await window.api.launch({
+        latitude: draftPin.latitude,
+        longitude: draftPin.longitude,
+      });
+
+      const id = result.id;
+      const coords: PinCoords = {
+        latitude: result.coords.latitude,
+        longitude: result.coords.longitude,
+      };
+
+      // Add to instances Map
+      setInstances((prev) => {
+        const next = new Map(prev);
+        next.set(id, { id, coords, color });
+        return next;
+      });
+
+      // Track in recent pins (ring buffer, cap at 10)
+      setRecentPins((prev) => pushBounded(prev, coords, 10));
+
+      // New instance becomes the active one
+      setActiveId(id);
+
       setLiveCount((prev) => prev + 1);
     } catch (err) {
       setLaunchError(err instanceof Error ? err.message : String(err));
@@ -70,8 +149,73 @@ export default function App() {
     }
   };
 
-  const handleCoordSubmit = (coords: PinCoords) => {
-    setPin(coords);
+  /** Live-update coordinates of a running instance on marker drag (no relaunch) */
+  const handleSetGeo = async (id: InstanceId, newCoords: PinCoords): Promise<void> => {
+    // Optimistic update — immediately reflect new coords in state
+    const prevCoords = instances.get(id)?.coords;
+    setInstances((prev) => {
+      const next = new Map(prev);
+      const inst = next.get(id);
+      if (inst) next.set(id, { ...inst, coords: newCoords });
+      return next;
+    });
+
+    try {
+      await window.api.setGeo(id, newCoords);
+    } catch {
+      // Revert optimistic update on failure
+      if (prevCoords) {
+        setInstances((prev) => {
+          const next = new Map(prev);
+          const inst = next.get(id);
+          if (inst) next.set(id, { ...inst, coords: prevCoords });
+          return next;
+        });
+      }
+    }
+  };
+
+  /** Close an instance by id — IPC close + cleanup */
+  const handleClose = async (id: InstanceId): Promise<void> => {
+    try {
+      await window.api.close(id);
+      // onInstanceClosed event will fire and remove from state
+    } catch {
+      // If IPC fails, still clean up state locally
+      setInstances((prev) => {
+        const next = new Map(prev);
+        next.delete(id);
+        return next;
+      });
+      setLiveCount((prev) => Math.max(0, prev - 1));
+      setActiveId((prev) => (prev === id ? null : prev));
+    }
+  };
+
+  /** Focus and fly to an instance's location when clicking a sidebar row */
+  const handleFocusInstance = (id: InstanceId): void => {
+    setActiveId(id);
+    const inst = instances.get(id);
+    if (inst) {
+      setFlyToTrigger((prev) => ({
+        ...inst.coords,
+        counter: (prev?.counter ?? 0) + 1,
+      }));
+    }
+  };
+
+  /** Click a recent pin: populate the draft pin + fly to it (no auto-launch) */
+  const handleRecentPinClick = (coords: PinCoords): void => {
+    setDraftPin(coords);
+    setFlyToTrigger((prev) => ({
+      ...coords,
+      counter: (prev?.counter ?? 0) + 1,
+    }));
+  };
+
+  /** Coord form submit: set draft pin + fly to */
+  const handleCoordSubmit = (coords: PinCoords): void => {
+    setDraftPin(coords);
     setFlyToTrigger((prev) => ({ ...coords, counter: (prev?.counter ?? 0) + 1 }));
   };
 
@@ -88,9 +232,33 @@ export default function App() {
         fontFamily: 'system-ui, sans-serif',
       }}
     >
-      {/* Map — fills available space */}
-      <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
-        <MapView pin={pin} onPinChange={setPin} flyToTrigger={flyToTrigger} />
+      {/* Main content row: map + sidebar */}
+      <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+        {/* Map — fills available horizontal space */}
+        <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+          <MapView
+            pin={draftPin}
+            onPinChange={setDraftPin}
+            flyToTrigger={flyToTrigger}
+            instances={instances}
+            activeId={activeId}
+            onMarkerDrag={(id, newCoords) => void handleSetGeo(id, newCoords)}
+          />
+        </div>
+
+        {/* Sidebar (right panel) */}
+        <div style={{ display: 'flex', flexDirection: 'column', width: 280, flexShrink: 0 }}>
+          <Sidebar
+            instances={instances}
+            activeId={activeId}
+            onFocus={handleFocusInstance}
+            onClose={(id) => void handleClose(id)}
+          />
+          <RecentPins
+            pins={recentPins}
+            onSelect={handleRecentPinClick}
+          />
+        </div>
       </div>
 
       {/* Bottom bar */}
@@ -109,24 +277,24 @@ export default function App() {
         {/* Coord input form (includes Google Maps URL paste) */}
         <CoordInput onSubmit={handleCoordSubmit} />
 
-        {/* Pin coordinate readout */}
+        {/* Draft pin coordinate readout */}
         <span
           data-testid="pin-coords"
           style={{ fontVariantNumeric: 'tabular-nums', fontSize: 13, minWidth: 180 }}
         >
-          {pin
-            ? `${pin.latitude.toFixed(4)}, ${pin.longitude.toFixed(4)}`
+          {draftPin
+            ? `${draftPin.latitude.toFixed(4)}, ${draftPin.longitude.toFixed(4)}`
             : ''}
         </span>
 
         {/* Launch button */}
         <button
           data-testid="launch-here-button"
-          disabled={pin === null || launchLoading}
+          disabled={draftPin === null || launchLoading}
           onClick={() => void handleLaunch()}
           style={{
             padding: '6px 14px',
-            cursor: pin && !launchLoading ? 'pointer' : 'default',
+            cursor: draftPin && !launchLoading ? 'pointer' : 'default',
             background: '#2d5a8e',
             color: '#fff',
             border: 'none',
