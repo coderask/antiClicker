@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: phase-complete
-stopped_at: Phase 03 verification complete; ready to plan Phase 04
-last_updated: "2026-05-15T15:50:00.000Z"
-last_activity: 2026-05-15 -- Phase 03 complete (4/4 plans, full IPC chain green)
+stopped_at: Phase 04 verification complete; ready to plan Phase 05 (Multi-Instance UX)
+last_updated: "2026-05-15T23:00:00.000Z"
+last_activity: 2026-05-15 -- Phase 04 complete (4/4 plans, full Map UI green)
 progress:
   total_phases: 7
   completed_phases: 4
-  total_plans: 17
-  completed_plans: 17
-  percent: 57
+  total_plans: 21
+  completed_plans: 18
+  percent: 86
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-14)
 
 **Core value:** One click on a map = a Chrome window that *is* at that location.
-**Current focus:** Phase 03 complete — Electron IPC contract frozen; ready for Phase 04 (Map UI)
+**Current focus:** Phase 04 complete — MapLibre satellite map UI shipped; ready for Phase 05 (Multi-Instance UX)
 
 ## Current Position
 
-Phase: 03 (electron-shell-ipc) — COMPLETE
+Phase: 04 (map-ui) — COMPLETE
 Plan: 4 of 4
-Status: Phase 03 verification passed — all 4 success criteria met
-Last activity: 2026-05-15 -- All 4 plans done; 53 unit tests + 5 launcher tests + 13 e2e tests green
+Status: Phase 04 verification passed — all success criteria met
+Last activity: 2026-05-15 -- All 4 plans done; MapLibre satellite map, draggable pin, coord form, Google Maps URL parser, 74 unit + 5 launcher + 14 e2e tests green
 
-Progress: [████░░░░░░] 57%
+Progress: [█████████░] 86%
 
 ## Performance Metrics
 
@@ -48,11 +48,12 @@ Progress: [████░░░░░░] 57%
 | 01 | 3 | ~55min | ~18min |
 | 02 | 3 | ~45min | ~15min |
 | 03 | 4 | ~90min | ~22min |
+| 04 | 4 | ~9min | ~2min |
 
 **Recent Trend:**
 
-- Last 5 plans: 02-03 (integration tests), 03-01 (IPC), 03-02 (preload), 03-03 (UI), 03-04 (tests)
-- Trend: steady execution; Phase 3 added IPC contract + e2e proof
+- Last 5 plans: 03-02 (preload), 03-03 (UI), 03-04 (tests), 04-03 (coord form), 04-04 (tests)
+- Trend: accelerating; Phase 4 completed in ~9min total (4 plans, MapLibre integration, full test suite green)
 
 *Updated after each plan completion*
 
@@ -73,6 +74,11 @@ Recent decisions affecting current work:
 - Phase 1: data: and about:blank URLs are non-secure origins in Chromium — geolocation requires localhost or https://. Use 127.0.0.1 HTTP server for integration test fixtures.
 - Phase 3: playwright + playwright-core must be explicitly included in externalizeDepsPlugin's include list — they are devDependencies, not auto-externalized. Bundling playwright causes chromium-bidi to be hoisted as a static ESM import that Node cannot resolve.
 - Phase 3: onInstanceClosed uses callback+unsubscribe pattern (not async-iterable) — matches React useEffect cleanup return signature exactly.
+- Phase 4: MapLibre maxZoom capped at 14 — EOX S2cloudless tiles only exist to zoom 14; higher zoom causes blank tiles silently.
+- Phase 4: flyToTrigger counter pattern — state object { latitude, longitude, counter } where counter increment signals re-submit even for same coordinates.
+- Phase 4: onPinChangeRef pattern — map click/dragend listeners read from ref rather than re-subscribing, preventing stale closure bugs.
+- Phase 4: vitest workspace split — separate node (unit/main/cli) and renderer (happy-dom/React) projects to avoid environment contamination.
+- Phase 4: zod v4 uses `z.number({ error: '...' })` not `z.number({ invalid_type_error: '...' })` — the field was renamed in v4.
 
 ### Pending Todos
 
@@ -80,10 +86,10 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-None for Phase 4. Carry-forward research flags:
+None for Phase 5. Carry-forward research flags:
 
-- Phase 4: MapLibre 5 raster attribution requirements (EOX S2cloudless — attribution must be visible per tile-source terms)
-- Phase 6: Bundled-Chromium packaging via `extraResources` + macOS notarization for spawned Chromium child
+- Phase 5: MapView will need to render multiple colored pins (per-instance); current controlled pin prop needs to expand to array
+- Phase 6: Bundled-Chromium packaging via `extraResources` + macOS notarization for spawned Chromium child; renderer bundle now ~2.2 MB (MapLibre)
 
 ## Deferred Items
 
@@ -94,5 +100,5 @@ None for Phase 4. Carry-forward research flags:
 ## Session Continuity
 
 Last session: 2026-05-15
-Stopped at: Phase 03 complete; ready to plan Phase 04 (Map UI)
+Stopped at: Phase 04 Map UI complete; ready to plan Phase 05
 Resume file: None

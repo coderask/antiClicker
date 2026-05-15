@@ -27,12 +27,12 @@ Requirements for initial release. Each maps to a roadmap phase.
 
 ### Map UI
 
-- [ ] **MAP-01**: User sees a satellite-view map on app launch (MapLibre GL JS 5 + EOX S2cloudless tiles by default; no API key required)
-- [ ] **MAP-02**: User can drag a pin to any location on the map; current lat/lng is displayed in a readable form (e.g., "37.7749, −122.4194")
-- [ ] **MAP-03**: User can enter lat/lng manually (decimal format) and the map pans to that pin
-- [ ] **MAP-04**: User can paste a Google Maps URL (e.g., `https://www.google.com/maps/@37.77,-122.41,15z`) and the app extracts coords + pans the pin
-- [ ] **MAP-05**: User can paste a Google Maps API key in settings; when present, the basemap swaps to Google Maps JS API satellite tiles
-- [ ] **MAP-06**: Map performance is smooth (pin drag uses `dragend`, not `drag`; no per-frame IPC traffic)
+- [x] **MAP-01**: User sees a satellite-view map on app launch (MapLibre GL JS 5 + EOX S2cloudless tiles by default; no API key required)
+- [x] **MAP-02**: User can drag a pin to any location on the map; current lat/lng is displayed in a readable form (e.g., "37.7749, −122.4194")
+- [x] **MAP-03**: User can enter lat/lng manually (decimal format) and the map pans to that pin
+- [x] **MAP-04**: User can paste a Google Maps URL (e.g., `https://www.google.com/maps/@37.77,-122.41,15z`) and the app extracts coords + pans the pin
+- [x] **MAP-05**: User can paste a Google Maps API key in settings; when present, the basemap swaps to Google Maps JS API satellite tiles
+- [x] **MAP-06**: Map performance is smooth (pin drag uses `dragend`, not `drag`; no per-frame IPC traffic)
 
 ### Multi-Instance UX
 
@@ -52,7 +52,7 @@ Requirements for initial release. Each maps to a roadmap phase.
 ### Reliability & Error Handling
 
 - [ ] **REL-01**: If Chrome/Chromium is not installed locally, the app offers to use the bundled Playwright Chromium fallback
-- [ ] **REL-02**: If the Google Maps API key is invalid or referrer-blocked, the app falls back to the default MapLibre basemap and surfaces a clear error in settings
+- [x] **REL-02**: If the Google Maps API key is invalid or referrer-blocked, the app falls back to the default MapLibre basemap and surfaces a clear error in settings
 - [ ] **REL-03**: On app quit, the app sweeps all running Chromes (or warns the user) and deletes all `anticlicker-profile-*` temp dirs
 - [ ] **REL-04**: On app startup, the app sweeps orphaned `anticlicker-profile-*` dirs whose owning PID is no longer alive
 - [ ] **REL-05**: IPC payloads from renderer→main are validated with zod (lat/lng bounds, instance IDs) before any CDP call
@@ -112,12 +112,12 @@ Which phases cover which requirements. Filled by roadmapper.
 | LCH-06 | Phase 2 | Pending |
 | LCH-07 | Phase 2 | Pending |
 | LCH-08 | Phase 2 | Pending |
-| MAP-01 | Phase 4 | Pending |
-| MAP-02 | Phase 4 | Pending |
-| MAP-03 | Phase 4 | Pending |
-| MAP-04 | Phase 4 | Pending |
-| MAP-05 | Phase 4 | Pending |
-| MAP-06 | Phase 4 | Pending |
+| MAP-01 | Phase 4 | Complete |
+| MAP-02 | Phase 4 | Complete |
+| MAP-03 | Phase 4 | Complete |
+| MAP-04 | Phase 4 | Complete |
+| MAP-05 | Phase 4 | Complete |
+| MAP-06 | Phase 4 | Complete |
 | MIX-01 | Phase 5 | Pending |
 | MIX-02 | Phase 5 | Pending |
 | MIX-03 | Phase 5 | Pending |
@@ -128,7 +128,7 @@ Which phases cover which requirements. Filled by roadmapper.
 | VRF-02 | Phase 6 | Pending |
 | VRF-03 | Phase 6 | Pending |
 | REL-01 | Phase 6 | Pending |
-| REL-02 | Phase 4 | Pending |
+| REL-02 | Phase 4 | Complete |
 | REL-03 | Phase 6 | Pending |
 | REL-04 | Phase 6 | Pending |
 | REL-05 | Phase 3 | Pending |

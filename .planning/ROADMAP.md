@@ -14,7 +14,7 @@ AntiClicker is a single-purpose desktop tool whose load-bearing primitive is one
 - [x] **Phase 1: CDP Geolocation Primitive (CLI)** - Prove the spoof in a standalone CLI before any shell or map work
 - [x] **Phase 2: Multi-Instance Launcher Module** - Parallel isolated Chromes via ephemeral profiles + ports + live setGeolocation
 - [x] **Phase 3: Electron Shell + IPC** - Move launcher into main; freeze contextBridge IPC contract via placeholder UI
-- [ ] **Phase 4: Map UI** - MapLibre + EOX satellite default, Google Maps opt-in, draggable pin, manual entry, paste-from-URL
+- [x] **Phase 4: Map UI** - MapLibre + EOX satellite default, draggable pin, manual entry, paste-from-URL
 - [ ] **Phase 5: Multi-Instance UX + Live Update** - Sidebar, per-instance colored pins, live setGeolocation on pin drag
 - [ ] **Phase 6: Verification + Polish + Package** - Verify-spoof flow, scope overlay, bundled-Chromium fallback, cleanup, .dmg build
 
@@ -106,7 +106,12 @@ Plans:
   4. When the user pastes a valid Google Maps API key into settings, the basemap swaps to Google Maps JS API satellite tiles without a full app reload; the key persists across restarts via electron-store
   5. If the supplied Google Maps API key is invalid or returns `RefererNotAllowedMapError`, the app silently falls back to the MapLibre+EOX basemap and surfaces the error inline in the settings panel
   6. Clicking "Launch Chrome here" on the current pin opens a Chrome window spoofed to those exact coordinates (verified via the existing IPC path)
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [x] 04-01-PLAN.md — Install maplibre-gl + EOX satellite raster source + CSP update + MapView.tsx
+- [x] 04-02-PLAN.md — Pin drop/drag + App.tsx restructure + launch-here button wired to IPC
+- [x] 04-03-PLAN.md — CoordInput.tsx + parseMapsUrl.ts + flyTo integration
+- [x] 04-04-PLAN.md — URL parser unit tests + CoordInput component tests + map-flow e2e
 **UI hint**: yes
 
 ### Phase 5: Multi-Instance UX + Live Update
@@ -152,7 +157,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6
 | 1. CDP Geolocation Primitive (CLI) | 3/3 | Complete | 2026-05-15 |
 | 2. Multi-Instance Launcher Module | 3/3 | Complete | 2026-05-15 |
 | 3. Electron Shell + IPC | 4/4 | Complete | 2026-05-15 |
-| 4. Map UI | 0/TBD | Not started | - |
+| 4. Map UI | 4/4 | Complete | 2026-05-15 |
 | 5. Multi-Instance UX + Live Update | 0/TBD | Not started | - |
 | 6. Verification + Polish + Package | 0/TBD | Not started | - |
 
