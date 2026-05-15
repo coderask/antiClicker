@@ -15,8 +15,8 @@ AntiClicker is a single-purpose desktop tool whose load-bearing primitive is one
 - [x] **Phase 2: Multi-Instance Launcher Module** - Parallel isolated Chromes via ephemeral profiles + ports + live setGeolocation
 - [x] **Phase 3: Electron Shell + IPC** - Move launcher into main; freeze contextBridge IPC contract via placeholder UI
 - [x] **Phase 4: Map UI** - MapLibre + EOX satellite default, draggable pin, manual entry, paste-from-URL
-- [ ] **Phase 5: Multi-Instance UX + Live Update** - Sidebar, per-instance colored pins, live setGeolocation on pin drag
-- [ ] **Phase 6: Verification + Polish + Package** - Verify-spoof flow, scope overlay, bundled-Chromium fallback, cleanup, .dmg build
+- [x] **Phase 5: Multi-Instance UX + Live Update** - Sidebar, per-instance colored pins, live setGeolocation on pin drag
+- [x] **Phase 6: Verification + Polish + Package** - Verify-spoof flow, scope overlay, bundled-Chromium fallback, cleanup, .dmg + .exe build
 
 ## Phase Details
 
@@ -150,7 +150,14 @@ Plans:
      - `AntiClicker-<version>.dmg` (macOS, unsigned — users will see a Gatekeeper warning on first run; documented in README)
      - `AntiClicker-Setup-<version>.exe` (Windows NSIS installer, unsigned — users will see a SmartScreen warning on first run; documented in README)
      Both artifacts install cleanly and reproduce the full end-to-end flow (map renders, pin drags, Chrome launches at the pin, verification passes). The macOS `.dmg` is built natively; the Windows `.exe` is cross-compiled from macOS via electron-builder (no Wine required for NSIS targets).
-**Plans**: TBD
+**Plans**: 6 plans
+Plans:
+- [x] 06-RESEARCH.md — electron-builder cross-compile, asar, PID sweep, overlay
+- [x] 06-01-PLAN.md — firstRunSeen schema + orphan sweep + IPC channels
+- [x] 06-02-PLAN.md — launcher.evaluate + verifySpoof + openVerificationUrls IPC
+- [x] 06-03-PLAN.md — ScopeOverlay + verify buttons + preload extension
+- [x] 06-04-PLAN.md — icon + electron-builder config
+- [x] 06-05-PLAN.md — tests + packaging dry-run + README
 **UI hint**: yes
 
 ## Progress
@@ -166,7 +173,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6
 | 3. Electron Shell + IPC | 4/4 | Complete | 2026-05-15 |
 | 4. Map UI | 4/4 | Complete | 2026-05-15 |
 | 5. Multi-Instance UX + Live Update | 5/5 | Complete | 2026-05-15 |
-| 6. Verification + Polish + Package | 0/TBD | Not started | - |
+| 6. Verification + Polish + Package | 6/6 | Complete | 2026-05-15 |
 
 ---
 *Roadmap created: 2026-05-14*
