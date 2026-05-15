@@ -30,7 +30,15 @@ AntiClicker is a single-purpose desktop tool whose load-bearing primitive is one
   2. The renderer is loaded from `http://localhost:<port>` in both dev and packaged builds — `window.location.protocol` is `http:`, never `file:`
   3. A test write to `electron-store` persists to the OS user-data dir (e.g., `~/Library/Application Support/AntiClicker/config.json`) and survives a relaunch
   4. The contextBridge preload exposes only a narrow, typed API surface (no raw `ipcRenderer`, no `require`)
-**Plans**: TBD
+**Plans**: 7 plans
+Plans:
+- [ ] 00-01-PLAN.md — Scaffold electron-vite project, pin versions, lay down Wave 0 test infra
+- [ ] 00-02-PLAN.md — Secure main process: webPreferences + dev/packaged URL switch + IPC bootstrap
+- [ ] 00-03-PLAN.md — Load-bearing node:http renderer server (FND-02)
+- [ ] 00-04-PLAN.md — electron-store + zod ConfigSchema wrapper (FND-03)
+- [ ] 00-05-PLAN.md — contextBridge preload + Phase 0 verification UI (FND-01 #4)
+- [ ] 00-06-PLAN.md — Playwright Electron e2e: secure-defaults, http-protocol, persistence
+- [ ] 00-07-PLAN.md — Manual Google Cloud Console quota cap + budget alerts checklist
 **UI hint**: no
 
 ### Phase 1: CDP Geolocation Primitive (CLI)
