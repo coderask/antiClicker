@@ -104,27 +104,68 @@ module.exports = async function customSign(opts) {
     trySign(p);
   }
 
-  // 2. Strip all extended attributes from the entire bundle AFTER signing nested
-  // components but BEFORE the final top-level sign. On macOS 15, codesign re-adds
-  // com.apple.provenance xattrs when it writes code signatures to files. stripping
-  // here ensures the top-level codesign call succeeds.
+  // 2. Aggressive recursive strip of extended attributes. Codesign rejects ANY
+  // file with com.apple.FinderInfo, resource forks, or AppleDouble data (the
+  // "detritus" in the error message). `xattr -cr` alone is unreliable on
+  // macOS 15 — Spotlight + Finder + file-provider daemons re-add attrs while
+  // codesign walks the tree. We run a find-driven per-file strip that's more
+  // thorough, then also do an explicit FinderInfo deletion on every directory
+  // (FinderInfo gets re-added to parent dirs as Finder accesses them).
   console.log('[sign-adhoc] Stripping extended attributes before final sign...');
   try {
+    // Top-level recursive strip (catches most things)
     execFileSync('xattr', ['-cr', appPath], { stdio: 'pipe' });
-  } catch {
-    // Best-effort — some paths may be read-only; log but continue
-    console.warn('[sign-adhoc] Warning: xattr strip had errors (continuing)');
+    // Per-file strip via find — defends against partial strips on macOS 15
+    execFileSync('/bin/sh', ['-c',
+      `find "${appPath}" -exec xattr -c {} \\; 2>/dev/null || true`
+    ], { stdio: 'pipe' });
+    // Explicit FinderInfo + fileprovider deletion — these are the specific
+    // attrs that cause "Finder information ... not allowed"
+    execFileSync('/bin/sh', ['-c',
+      `find "${appPath}" -exec xattr -d com.apple.FinderInfo {} \\; 2>/dev/null || true`
+    ], { stdio: 'pipe' });
+    execFileSync('/bin/sh', ['-c',
+      `find "${appPath}" -exec xattr -d com.apple.fileprovider.fpfs#P {} \\; 2>/dev/null || true`
+    ], { stdio: 'pipe' });
+  } catch (err) {
+    console.warn(`[sign-adhoc] Warning: xattr strip had errors: ${err.message}`);
   }
 
-  // 3. Sign the top-level .app bundle last (without --deep — we already walked
-  // and signed all nested bundles individually above, so --deep is not needed
-  // and causes failures when com.apple.provenance xattrs are present on macOS 15).
+  // 3. Sign the top-level .app bundle last. Use a retry loop: if codesign fails
+  // with "resource fork / Finder information / detritus", strip xattrs again
+  // and retry. macOS 15's file-provider daemon can re-add FinderInfo between
+  // our strip and codesign's walk, so a fresh strip immediately before retry
+  // is the workaround.
   console.log(`[sign-adhoc] Signing top-level bundle: ${appPath}`);
-  execFileSync('codesign', [
-    '--sign', '-',
-    '--force',
-    appPath
-  ], { stdio: 'inherit' });
-
-  console.log('[sign-adhoc] Done.');
+  let lastError = null;
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    try {
+      execFileSync('codesign', [
+        '--sign', '-',
+        '--force',
+        appPath
+      ], { stdio: 'pipe' });
+      console.log('[sign-adhoc] Done.');
+      return;
+    } catch (err) {
+      lastError = err;
+      const stderr = err.stderr ? err.stderr.toString() : '';
+      if (stderr.includes('resource fork') || stderr.includes('detritus') || stderr.includes('Finder information')) {
+        console.log(`[sign-adhoc] Attempt ${attempt} hit FinderInfo/detritus; re-stripping and retrying...`);
+        try {
+          execFileSync('xattr', ['-cr', appPath], { stdio: 'pipe' });
+          execFileSync('/bin/sh', ['-c',
+            `find "${appPath}" -exec xattr -d com.apple.FinderInfo {} \\; 2>/dev/null || true`
+          ], { stdio: 'pipe' });
+        } catch {
+          // Continue to next retry
+        }
+        continue;
+      }
+      // Non-FinderInfo error — surface immediately
+      throw err;
+    }
+  }
+  // All retries exhausted
+  throw lastError || new Error('[sign-adhoc] codesign failed after retries');
 };
