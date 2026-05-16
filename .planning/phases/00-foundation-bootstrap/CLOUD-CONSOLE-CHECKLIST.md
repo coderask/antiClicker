@@ -1,34 +1,45 @@
 # Phase 0 — Google Cloud Console Setup Checklist
 
-**Status:** NOT REQUIRED for v1
-**Decision Date:** 2026-05-15
-**Plan:** 00-07 (originally pending user action; superseded by stack decision)
+**Status:** OPTIONAL — enables Google Maps satellite (higher zoom). Without it, the app uses Esri World Imagery (free, lower zoom). Required only if you want building-level satellite imagery.
+**Updated:** 2026-05-15 (v0.0.5)
+**Plan:** 00-07 (originally NOT REQUIRED for v1; reinstated as optional in v0.0.5)
 
-## Why This Is Not Required
+## Background
 
-The v1 stack ships **MapLibre GL JS + EOX S2cloudless satellite tiles** as the only basemap. Neither requires a Google Maps JavaScript API key. The Google Maps opt-in path was originally scoped as a future enhancement; per the 2026-05-15 decision, it is now explicitly **out of scope for v1** and the corresponding Cloud Console setup is therefore not required.
+In v0.0.5, AntiClicker gained support for Google Maps JavaScript API as an optional higher-resolution satellite backend. The `googleMapsApiKey` slot in `electron-store` (defined in `src/main/config-store.ts`) is now actively used when a key is configured.
 
-The `googleMapsApiKey: string | null` slot in `electron-store` (defined in `src/main/config-store.ts`) stays in the schema but remains unused in v1. A future minor version can add the opt-in surface without schema migration — the existing default of `null` is the "no key" sentinel.
+**Without a key:** The app uses Esri World Imagery via MapLibre (free, no account required, maxes out around zoom 17).
 
-## What This Means for Pitfalls 4 and 5
+**With a key:** The app uses Google Maps hybrid view (satellite + labels), which supports zoom 21+ including building-level imagery. The key is stored in electron-store (OS user-data dir) and never committed to source control.
 
-- **Pitfall 4** (HTTP-referrer restriction): not applicable — no key to restrict.
-- **Pitfall 5** (billing surprise from unrestricted key): not applicable — no Google billing relationship.
+## Google Cloud Console Setup (do these steps only to enable Google Maps)
 
-Both pitfalls are closed by **not using Google Maps**, which is a stronger guarantee than capping a key after the fact.
+1. **Enable the API.** Console → APIs & Services → Library → search "Maps JavaScript API" → Enable.
 
-## What's Still in the Repo
+2. **Set a quota cap.** Console → APIs & Services → Quotas → Maps JavaScript API → Edit → set Queries Per Day to ~1000 for personal use. This closes Pitfall 5 (billing surprise from runaway usage).
 
-- `src/main/config-store.ts` still declares the `googleMapsApiKey` field. Untouched in v1; reserved for future opt-in. Acceptance criteria around the field stay as-is.
-- This file remains as a historical record of the decision and as a pointer for the v1.x or v2 milestone if the Google Maps path is later revisited.
+3. **Set up budget alerts.** Console → Billing → Budgets & alerts → Create budget → set thresholds at $5, $20, $50. Belt-and-suspenders against Pitfall 5.
 
-## If You Later Decide to Add the Google Maps Opt-In
+4. **Create and restrict the API key.** Console → APIs & Services → Credentials → Create credentials → API key. Click the new key and add:
+   - Application restrictions → HTTP referrers
+   - Add `http://localhost/*` and `http://127.0.0.1/*`
+   This closes Pitfall 4 (unrestricted key usable from any domain).
 
-The original four-step Cloud Console procedure is preserved below. Do these steps **only** if a future version reintroduces the Maps JavaScript API path:
+5. **Copy the key into the app.** Two paths:
+   - **Option A (production):** Click the ⚙ cog in the AntiClicker bottom bar, paste the key, press Save. Stored in electron-store — survives app restarts.
+   - **Option B (development):** Copy `.env.template` → `.env.local`, fill in `GOOGLE_MAPS_API_KEY=AIza...`, run `npm run dev`. The main process reads it on startup and writes to electron-store.
 
-1. Enable the Maps JavaScript API on a Google Cloud project. (Console → APIs & Services → Library → Maps JavaScript API → Enable)
-2. Set a Queries Per Day (QPD) quota cap (~1000 req/day for personal use). (Console → APIs & Services → Quotas → Maps JavaScript API → Edit)
-3. Set up budget alerts at $5, $20, $50 thresholds. (Console → Billing → Budgets & alerts → Create budget)
-4. Create an API key restricted to HTTP-Referrers `http://localhost/*` and `http://127.0.0.1/*`. The key value goes through the in-app settings UI at runtime; never into version control.
+## Pitfalls Addressed
 
-These mitigations close Pitfall 4 and Pitfall 5 from `research/PITFALLS.md`. They are documented here for completeness but are not required for the v1 ship.
+- **Pitfall 4** (HTTP-referrer restriction): Mitigated by step 4 above — key restricted to `localhost/*` only.
+- **Pitfall 5** (billing surprise): Mitigated by steps 2 and 3 above — QPD cap + budget alerts.
+
+Both pitfalls are still fully closed by **not using Google Maps** (when no key is configured, the Esri/MapLibre path runs with zero Google billing relationship).
+
+## What's in the Repo
+
+- `src/main/config-store.ts` — `googleMapsApiKey` field in ConfigSchema (string | null, default null)
+- `src/main/load-env-key.ts` — inline .env.local parser (reads GOOGLE_MAPS_API_KEY without dotenv)
+- `src/renderer/src/map/GoogleMapView.tsx` — Google Maps backend component
+- `.env.template` — template for `.env.local` (safe to commit, contains no secrets)
+- `.gitignore` — `.env.local` is gitignored

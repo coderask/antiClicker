@@ -13,15 +13,15 @@
 
 | Platform | File | Notes |
 |----------|------|-------|
-| macOS (Apple Silicon) | `AntiClicker-0.0.2-arm64.dmg` | Ad-hoc signed |
-| macOS (Intel) | `AntiClicker-0.0.2.dmg` | Ad-hoc signed |
-| Windows 10/11 | `AntiClicker Setup 0.0.2.exe` | Unsigned |
+| macOS (Apple Silicon) | `AntiClicker-0.0.5-arm64.dmg` | Ad-hoc signed |
+| macOS (Intel) | `AntiClicker-0.0.5.dmg` | Ad-hoc signed |
+| Windows 10/11 | `AntiClicker Setup 0.0.5.exe` | Unsigned |
 
 Download from [Releases](../../releases).
 
-### macOS (ad-hoc signed in v0.0.2 — Gatekeeper warning is expected)
+### macOS (ad-hoc signed — Gatekeeper warning is expected)
 
-1. Download `AntiClicker-0.0.2-arm64.dmg` (Apple Silicon) or `AntiClicker-0.0.2.dmg` (Intel) from the latest release.
+1. Download `AntiClicker-0.0.5-arm64.dmg` (Apple Silicon) or `AntiClicker-0.0.5.dmg` (Intel) from the latest release.
 2. Open the DMG, drag `AntiClicker.app` to the Applications shortcut, eject the disk image.
 3. First launch will fail with "AntiClicker can't be opened because Apple cannot check it for malicious software." This is expected — the app is ad-hoc signed, not notarized. To approve it:
    - Open **System Settings → Privacy & Security**
@@ -31,13 +31,39 @@ Download from [Releases](../../releases).
 4. The app opens. The first-run scope overlay appears; read it and click "Got it."
 5. You're in. Future launches double-click as normal.
 
-> Why ad-hoc signing and not notarization? Notarization requires a $99/year Apple Developer membership. v0.0.2 is the ad-hoc-signed compromise: works, but you click through one warning the first time.
+> Why ad-hoc signing and not notarization? Notarization requires a $99/year Apple Developer membership. v0.0.5 is the ad-hoc-signed compromise: works, but you click through one warning the first time.
 
 ### Windows (SmartScreen)
 
-1. Download `AntiClicker Setup 0.0.2.exe`.
+1. Download `AntiClicker Setup 0.0.5.exe`.
 2. Run it. SmartScreen blocks unrecognized publishers — click **More info** then **Run anyway**.
 3. The app installs to `%LOCALAPPDATA%\Programs\AntiClicker` by default.
+
+---
+
+## Optional: enable Google Maps satellite (better zoom)
+
+By default AntiClicker uses Esri World Imagery (free, no API key, but maxes out around zoom 17). For building-level satellite imagery and zoom up to 21+, you can plug in a Google Maps API key.
+
+### Get a key
+1. Open https://console.cloud.google.com — sign in or create a project
+2. **APIs & Services → Library** — search for and enable **Maps JavaScript API**
+3. **Billing** — link a billing account (required, but Google gives a $200/month free credit; personal use is well under that — ~28k map loads/month free)
+4. **APIs & Services → Credentials → Create credentials → API key**
+5. Click the new key and add **Application restrictions → HTTP referrers** with `http://localhost/*` and `http://127.0.0.1/*`
+6. (Strongly recommended) **APIs & Services → Quotas** — cap the Maps JavaScript API at 1000 requests/day for personal use
+
+### Use the key — two paths
+**Option A (recommended): paste it into the app.**
+Click the ⚙ settings cog in the bottom bar, paste the key, press Save. The app stores it in electron-store (OS user-data dir, never committed). The map immediately switches to Google Maps.
+
+**Option B (for development): .env.local at the repo root.**
+Copy `.env.template` to `.env.local`, fill in `GOOGLE_MAPS_API_KEY=AIza...`, run `npm run dev`. Main reads the file on startup and writes the key into electron-store. After this, you can delete `.env.local` — the key persists in user-data. (Note: this only works for dev builds; packaged app users should use Option A.)
+
+### Verifying it took effect
+- The bottom-bar indicator badge will switch from "Esri (free)" to "Google Maps"
+- Zoom past 17 — you should see street labels and individual buildings rendered
+- The key never leaves your machine. AntiClicker doesn't telemetry or sync.
 
 ---
 
@@ -92,7 +118,7 @@ Artifacts appear in `dist/`.
 
 ```bash
 npm run typecheck   # TypeScript type check
-npm run test:unit   # Unit + component tests (98 tests)
+npm run test:unit   # Unit + component tests (110+ tests)
 npm run test:e2e    # Electron + CLI + launcher integration (18 tests)
 npm test            # Full suite
 ```
@@ -107,11 +133,7 @@ On first launch, AntiClicker creates a config file at:
 
 **Optional: Google Maps API key**
 
-By default, AntiClicker uses free [EOX S2cloudless](https://s2maps.eu/) satellite tiles (no API key required). To use Google Maps satellite tiles (higher resolution, Street View available):
-
-1. Get a Maps JavaScript API key from [Google Cloud Console](https://console.cloud.google.com/google/maps-apis).
-2. Add it to the settings panel in the app.
-3. The key is stored only in the local config file — never in the source code.
+By default, AntiClicker uses Esri World Imagery (free, no API key). To enable higher-resolution Google Maps satellite tiles, see the [Optional: enable Google Maps satellite](#optional-enable-google-maps-satellite-better-zoom) section above. The key is stored only in the local config file — never in source code.
 
 ---
 
