@@ -6,6 +6,7 @@
 // Phase 3: Api now has 7 methods (was 2 in Phase 0).
 // Phase 6: 4 more methods added (verifySpoof, openVerificationUrls, markFirstRunSeen, getFirstRunSeen).
 // Phase 7: 6 more methods added (getRecentPins, setRecentPins, getFavorites, setFavorites, getMapsApiKey, setMapsApiKey).
+// Quick (place-search): geocodeSearch.
 
 import { describe, expect, it } from 'vitest';
 import type { Api } from '../../src/preload/index.js';
@@ -39,10 +40,12 @@ const fakeApi: Api = {
   setFavorites: async (_favs) => undefined,
   getMapsApiKey: async () => null,
   setMapsApiKey: async (_key) => undefined,
+  // Quick (place-search)
+  geocodeSearch: async (_q) => [],
 };
 
 describe('Preload Api', () => {
-  it('exposes all required methods (Phase 0 + 3 + 6 + 7 = 17 total)', () => {
+  it('exposes all required methods (Phase 0 + 3 + 6 + 7 + place-search = 18 total)', () => {
     const required: (keyof Api)[] = [
       // Phase 0
       'ping',
@@ -65,8 +68,10 @@ describe('Preload Api', () => {
       'setFavorites',
       'getMapsApiKey',
       'setMapsApiKey',
+      // Quick (place-search)
+      'geocodeSearch',
     ];
-    expect(required.length).toBe(17);
+    expect(required.length).toBe(18);
     for (const key of required) {
       expect(typeof fakeApi[key]).toBe('function');
     }

@@ -7,6 +7,7 @@
 // Phase 3 surface: launch, setGeo, close, list, onInstanceClosed
 // Phase 6 surface: verifySpoof, openVerificationUrls, markFirstRunSeen, getFirstRunSeen
 // Phase 7 surface: getRecentPins, setRecentPins, getFavorites, setFavorites, getMapsApiKey, setMapsApiKey
+// Quick (place-search): geocodeSearch
 //
 // onInstanceClosed uses the push-event pattern (ipcRenderer.on + removeListener)
 // instead of ipcRenderer.invoke. The returned () => void is the unsubscribe
@@ -108,6 +109,16 @@ const api = {
   /** Set or clear the Google Maps API key (null to clear). */
   setMapsApiKey: (key: string | null): Promise<void> =>
     ipcRenderer.invoke(IpcChannels.ConfigSetMapsApiKey, key),
+
+  // Quick (place-search) — Nominatim-backed geocoding
+  /**
+   * Geocode a free-text place query to up to 6 ranked results. Returns an
+   * empty array on network / parse error (never throws into the renderer).
+   */
+  geocodeSearch: (
+    query: string,
+  ): Promise<Array<{ name: string; detail: string; latitude: number; longitude: number }>> =>
+    ipcRenderer.invoke(IpcChannels.GeocodeSearch, { query }),
 } as const;
 
 export type Api = typeof api;

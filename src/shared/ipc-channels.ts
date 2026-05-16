@@ -36,6 +36,8 @@ export const IpcChannels = {
   ConfigSetFavorites: 'config:set-favorites',
   ConfigGetMapsApiKey: 'config:get-maps-api-key',
   ConfigSetMapsApiKey: 'config:set-maps-api-key',
+  // Quick (place-search) — Nominatim-backed geocoding
+  GeocodeSearch: 'geocode:search',
 } as const;
 
 export type IpcChannel = (typeof IpcChannels)[keyof typeof IpcChannels];

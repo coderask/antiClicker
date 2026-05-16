@@ -28,6 +28,7 @@ import ScopeOverlay from './ScopeOverlay';
 import TopBar from './TopBar';
 import CommandBar from './CommandBar';
 import SettingsPanel from './SettingsPanel';
+import Search from './Search';
 import { theme, colorForInstanceId } from './theme';
 import { pushBounded } from './utils/ringBuffer';
 
@@ -341,6 +342,14 @@ export default function App() {
         backend={mapsApiKey ? 'google' : 'esri'}
         onOpenSettings={() => setShowSettings(true)}
         cursorCoords={cursorCoords}
+      />
+
+      {/* Floating place search (top-center) */}
+      <Search
+        onSelect={(coords) => {
+          setDraftPin(coords);
+          flyTo(coords);
+        }}
       />
 
       {/* Right-side stacked sections (translucent panel) */}

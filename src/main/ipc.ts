@@ -24,6 +24,7 @@ import { ZodCoordsSchema } from '../shared/coords-schema.js';
 import { createLauncher } from '../launcher/index.js';
 import type { Launcher } from '../launcher/index.js';
 import type { PingResponse, LaunchCount } from '../shared/types.js';
+import { geocodeNominatim } from './geocoder.js';
 
 // ---------------------------------------------------------------------------
 // Exported Zod schemas (tested in isolation by tests/unit/ipc-validation.test.ts)
@@ -253,6 +254,24 @@ export function registerIpc(): void {
     // Accept string or null; never log the key value
     const key = z.string().nullable().parse(payload);
     getStore().set('googleMapsApiKey', key);
+  });
+
+  // ------------------------------------------------------------------
+  // Place search — Nominatim-backed geocoding
+  // Errors are swallowed into an empty array so the UI shows a graceful
+  // "no results" state instead of an unhandled rejection.
+  // ------------------------------------------------------------------
+  ipcMain.handle(IpcChannels.GeocodeSearch, async (_e, payload: unknown) => {
+    const { query } = z
+      .object({ query: z.string().min(1).max(200) })
+      .parse(payload);
+    try {
+      return await geocodeNominatim(query);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[ipc] geocode failed:', err);
+      return [];
+    }
   });
 
   // ------------------------------------------------------------------
