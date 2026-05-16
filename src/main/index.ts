@@ -33,6 +33,14 @@ import { initConfigStore } from './config-store.js';
 import { registerIpc, closeLauncherIfAny } from './ipc.js';
 import { sweepOrphanedProfiles } from './sweep.js';
 
+// Point Playwright at the bundled Chromium extracted to Contents/Resources/playwright-browsers
+// by electron-builder extraResources. This must be set before playwright's chromium object
+// is first used (it reads this env var lazily at launch time). In dev, skip so that the
+// system Playwright browser cache (~/.cache/ms-playwright) is used instead.
+if (app.isPackaged) {
+  process.env['PLAYWRIGHT_BROWSERS_PATH'] = join(process.resourcesPath, 'playwright-browsers');
+}
+
 // Re-export for tests that import from this module
 export { sweepOrphanedProfiles };
 
