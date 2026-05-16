@@ -29,7 +29,8 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { is } from '@electron-toolkit/utils';
 import { startRendererServer, stopRendererServer } from './renderer-server.js';
-import { initConfigStore } from './config-store.js';
+import { initConfigStore, getStore } from './config-store.js';
+import { loadEnvKey } from './load-env-key.js';
 import { registerIpc, closeLauncherIfAny } from './ipc.js';
 import { sweepOrphanedProfiles } from './sweep.js';
 
@@ -86,6 +87,15 @@ app.whenReady().then(async () => {
   // from it — ordering matters: registerIpc binds handlers that may call
   // getStore() on the first invoke.
   initConfigStore();
+
+  // Phase 7: load Google Maps API key from .env.local if present in dev,
+  // and write it to electron-store (idempotent — only if store has null).
+  // This is a no-op in packaged builds (no .env.local inside the app bundle).
+  const envKey = loadEnvKey(app.isPackaged ? app.getAppPath() : process.cwd());
+  if (envKey && !getStore().get('googleMapsApiKey')) {
+    getStore().set('googleMapsApiKey', envKey);
+  }
+
   registerIpc();
   await createWindow();
 
