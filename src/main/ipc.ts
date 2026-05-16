@@ -18,7 +18,7 @@
 
 import { ipcMain, BrowserWindow } from 'electron';
 import { z } from 'zod';
-import { getStore } from './config-store.js';
+import { getStore, NamedCoordsSchema } from './config-store.js';
 import { IpcChannels } from '../shared/ipc-channels.js';
 import { ZodCoordsSchema } from '../shared/coords-schema.js';
 import { createLauncher } from '../launcher/index.js';
@@ -211,6 +211,48 @@ export function registerIpc(): void {
 
     const tzPage = await context.newPage();
     void tzPage.goto('https://browserleaks.com/timezone').catch(() => undefined);
+  });
+
+  // ------------------------------------------------------------------
+  // Phase 7 handlers — persistence + Google Maps API key
+  // ------------------------------------------------------------------
+
+  // Inline schemas for the array payloads (mirrors ConfigSchema fields)
+  const RecentPinArraySchema = z.array(
+    z.object({
+      latitude: z.number().min(-90).max(90),
+      longitude: z.number().min(-180).max(180),
+      timestamp: z.number(),
+    }),
+  );
+  const FavoritesArraySchema = z.array(NamedCoordsSchema);
+
+  ipcMain.handle(IpcChannels.ConfigGetRecentPins, () => {
+    return getStore().get('recentPins') ?? [];
+  });
+
+  ipcMain.handle(IpcChannels.ConfigSetRecentPins, (_e, payload: unknown) => {
+    const pins = RecentPinArraySchema.parse(payload);
+    getStore().set('recentPins', pins);
+  });
+
+  ipcMain.handle(IpcChannels.ConfigGetFavorites, () => {
+    return getStore().get('favorites') ?? [];
+  });
+
+  ipcMain.handle(IpcChannels.ConfigSetFavorites, (_e, payload: unknown) => {
+    const favs = FavoritesArraySchema.parse(payload);
+    getStore().set('favorites', favs);
+  });
+
+  ipcMain.handle(IpcChannels.ConfigGetMapsApiKey, () => {
+    return getStore().get('googleMapsApiKey') ?? null;
+  });
+
+  ipcMain.handle(IpcChannels.ConfigSetMapsApiKey, (_e, payload: unknown) => {
+    // Accept string or null; never log the key value
+    const key = z.string().nullable().parse(payload);
+    getStore().set('googleMapsApiKey', key);
   });
 
   // ------------------------------------------------------------------

@@ -29,6 +29,13 @@ export const IpcChannels = {
   ConfigMarkFirstRunSeen: 'config:mark-first-run-seen',
   LauncherVerifySpoof: 'launcher:verify-spoof',
   LauncherOpenVerificationUrls: 'launcher:open-verification-urls',
+  // Phase 7 — persistence + Google Maps
+  ConfigGetRecentPins: 'config:get-recent-pins',
+  ConfigSetRecentPins: 'config:set-recent-pins',
+  ConfigGetFavorites: 'config:get-favorites',
+  ConfigSetFavorites: 'config:set-favorites',
+  ConfigGetMapsApiKey: 'config:get-maps-api-key',
+  ConfigSetMapsApiKey: 'config:set-maps-api-key',
 } as const;
 
 export type IpcChannel = (typeof IpcChannels)[keyof typeof IpcChannels];

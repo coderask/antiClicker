@@ -6,6 +6,7 @@
 // Phase 0 surface: ping, getLaunchCount
 // Phase 3 surface: launch, setGeo, close, list, onInstanceClosed
 // Phase 6 surface: verifySpoof, openVerificationUrls, markFirstRunSeen, getFirstRunSeen
+// Phase 7 surface: getRecentPins, setRecentPins, getFavorites, setFavorites, getMapsApiKey, setMapsApiKey
 //
 // onInstanceClosed uses the push-event pattern (ipcRenderer.on + removeListener)
 // instead of ipcRenderer.invoke. The returned () => void is the unsubscribe
@@ -82,6 +83,31 @@ const api = {
   /** Open browserleaks.com geo/ip/timezone tabs in the launched Chrome. */
   openVerificationUrls: (id: string): Promise<void> =>
     ipcRenderer.invoke(IpcChannels.LauncherOpenVerificationUrls, { id }),
+
+  // Phase 7 — persistence + Maps API key
+  /** Load the persisted recent pins ring buffer. */
+  getRecentPins: (): Promise<Array<{ latitude: number; longitude: number; timestamp: number }>> =>
+    ipcRenderer.invoke(IpcChannels.ConfigGetRecentPins),
+
+  /** Persist the recent pins ring buffer. */
+  setRecentPins: (pins: Array<{ latitude: number; longitude: number; timestamp: number }>): Promise<void> =>
+    ipcRenderer.invoke(IpcChannels.ConfigSetRecentPins, pins),
+
+  /** Load the persisted favorites list. */
+  getFavorites: (): Promise<Array<{ id: string; name: string; latitude: number; longitude: number; createdAt: number }>> =>
+    ipcRenderer.invoke(IpcChannels.ConfigGetFavorites),
+
+  /** Persist the favorites list. */
+  setFavorites: (favs: Array<{ id: string; name: string; latitude: number; longitude: number; createdAt: number }>): Promise<void> =>
+    ipcRenderer.invoke(IpcChannels.ConfigSetFavorites, favs),
+
+  /** Get the stored Google Maps API key (or null if not set). */
+  getMapsApiKey: (): Promise<string | null> =>
+    ipcRenderer.invoke(IpcChannels.ConfigGetMapsApiKey),
+
+  /** Set or clear the Google Maps API key (null to clear). */
+  setMapsApiKey: (key: string | null): Promise<void> =>
+    ipcRenderer.invoke(IpcChannels.ConfigSetMapsApiKey, key),
 } as const;
 
 export type Api = typeof api;
