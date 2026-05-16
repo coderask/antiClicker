@@ -104,21 +104,27 @@ module.exports = async function customSign(opts) {
     trySign(p);
   }
 
-  // 2. Sign the top-level .app bundle last with --deep as a safety net
-  console.log(`[sign-adhoc] Signing top-level bundle: ${appPath}`);
+  // 2. Strip all extended attributes from the entire bundle AFTER signing nested
+  // components but BEFORE the final top-level sign. On macOS 15, codesign re-adds
+  // com.apple.provenance xattrs when it writes code signatures to files. stripping
+  // here ensures the top-level codesign call succeeds.
+  console.log('[sign-adhoc] Stripping extended attributes before final sign...');
   try {
-    execFileSync('codesign', [
-      '--sign', '-',
-      '--force',
-      '--deep',
-      appPath
-    ], { stdio: 'inherit' });
-  } catch (err) {
-    // If --deep also fails due to xattrs, strip and retry
-    console.warn('[sign-adhoc] --deep failed, stripping xattrs and retrying...');
     execFileSync('xattr', ['-cr', appPath], { stdio: 'pipe' });
-    execFileSync('codesign', ['--sign', '-', '--force', '--deep', appPath], { stdio: 'inherit' });
+  } catch {
+    // Best-effort — some paths may be read-only; log but continue
+    console.warn('[sign-adhoc] Warning: xattr strip had errors (continuing)');
   }
+
+  // 3. Sign the top-level .app bundle last (without --deep — we already walked
+  // and signed all nested bundles individually above, so --deep is not needed
+  // and causes failures when com.apple.provenance xattrs are present on macOS 15).
+  console.log(`[sign-adhoc] Signing top-level bundle: ${appPath}`);
+  execFileSync('codesign', [
+    '--sign', '-',
+    '--force',
+    appPath
+  ], { stdio: 'inherit' });
 
   console.log('[sign-adhoc] Done.');
 };
