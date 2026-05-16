@@ -27,6 +27,7 @@ import MapView, { type PinCoords } from './map/MapView';
 import CoordInput from './CoordInput';
 import Sidebar, { type VerifyResult } from './Sidebar';
 import RecentPins from './RecentPins';
+import Favorites, { type Favorite } from './Favorites';
 import ScopeOverlay from './ScopeOverlay';
 import { pushBounded } from './utils/ringBuffer';
 
@@ -83,6 +84,14 @@ export default function App() {
   const [showOverlay, setShowOverlay] = useState(false);
   const [verifyResults, setVerifyResults] = useState<Map<InstanceId, VerifyResult>>(new Map());
 
+  // ------------------------------------------------------------------
+  // Phase 7 — favorites state
+  // ------------------------------------------------------------------
+  const [favorites, setFavorites] = useState<Favorite[]>([]);
+  const [showKeyInput, setShowKeyInput] = useState(false);
+  const [pendingKey, setPendingKey] = useState('');
+  const [mapsApiKey, setMapsApiKey] = useState<string | null>(null);
+
   // flyToTrigger: signals MapView to animate to a location
   const [flyToTrigger, setFlyToTrigger] = useState<
     { latitude: number; longitude: number; counter: number } | undefined
@@ -104,6 +113,10 @@ export default function App() {
       // Strip the timestamp field — React state only needs lat/lng
       setRecentPins(pins.map((p) => ({ latitude: p.latitude, longitude: p.longitude })));
     }).catch(() => undefined);
+    // Phase 7: load favorites from electron-store on mount
+    window.api.getFavorites().then((favs) => setFavorites(favs)).catch(() => undefined);
+    // Phase 7: load stored Maps API key on mount
+    window.api.getMapsApiKey().then(setMapsApiKey).catch(() => undefined);
   }, []);
 
   // Phase 7: debounced persist of recentPins to electron-store (500ms)
@@ -120,6 +133,14 @@ export default function App() {
     }, 500);
     return () => clearTimeout(timer);
   }, [recentPins]);
+
+  // Phase 7: debounced persist of favorites to electron-store (500ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      window.api.setFavorites(favorites).catch(() => undefined);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [favorites]);
 
   useEffect(() => {
     // Phase 3/5: subscribe to instance-closed push events from main.
@@ -280,6 +301,54 @@ export default function App() {
     window.api.openVerificationUrls(id).catch(() => undefined);
   };
 
+  // Phase 7 — favorites handlers
+
+  /** Save the current draft pin as a favorite (prompts for optional name) */
+  const handleSaveFavorite = (): void => {
+    if (!draftPin) return;
+    const defaultName = `${draftPin.latitude.toFixed(3)}, ${draftPin.longitude.toFixed(3)}`;
+    const name = window.prompt('Name for this favorite (leave blank for coordinates):', defaultName);
+    if (name === null) return; // user cancelled the prompt
+    const newFav: Favorite = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+      name: name.trim() || defaultName,
+      latitude: draftPin.latitude,
+      longitude: draftPin.longitude,
+      createdAt: Date.now(),
+    };
+    setFavorites((prev) => [...prev, newFav].slice(0, 100));
+  };
+
+  /** Remove a favorite by id */
+  const handleDeleteFavorite = (id: string): void => {
+    setFavorites((prev) => prev.filter((f) => f.id !== id));
+  };
+
+  /** Click a favorite: populate draft pin + fly to it */
+  const handleFavoriteSelect = (coords: PinCoords): void => {
+    setDraftPin(coords);
+    setFlyToTrigger((prev) => ({
+      ...coords,
+      counter: (prev?.counter ?? 0) + 1,
+    }));
+  };
+
+  /** Save a new Maps API key */
+  const handleSaveKey = async (): Promise<void> => {
+    const trimmed = pendingKey.trim();
+    if (!trimmed) return;
+    await window.api.setMapsApiKey(trimmed);
+    setMapsApiKey(trimmed);
+    setShowKeyInput(false);
+    setPendingKey('');
+  };
+
+  /** Clear the stored Maps API key (reverts to Esri/MapLibre) */
+  const handleClearKey = async (): Promise<void> => {
+    await window.api.setMapsApiKey(null);
+    setMapsApiKey(null);
+  };
+
   const protocol = window.location.protocol;
 
   return (
@@ -319,6 +388,11 @@ export default function App() {
             onVerify={(id) => void handleVerify(id)}
             onOpenVerificationUrls={handleOpenVerificationUrls}
             verifyResults={verifyResults}
+          />
+          <Favorites
+            favorites={favorites}
+            onSelect={handleFavoriteSelect}
+            onDelete={handleDeleteFavorite}
           />
           <RecentPins
             pins={recentPins}
@@ -376,6 +450,26 @@ export default function App() {
           </span>
         )}
 
+        {/* Phase 7 — save as favorite button (only when draft pin is set) */}
+        {draftPin && (
+          <button
+            data-testid="save-favorite-button"
+            onClick={handleSaveFavorite}
+            style={{
+              padding: '6px 10px',
+              background: '#8e6914',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 4,
+              cursor: 'pointer',
+              fontSize: 13,
+            }}
+            title="Save this location as a favorite"
+          >
+            ★ Save
+          </button>
+        )}
+
         {/* Live-instances counter (Phase 3 — must remain) */}
         <span style={{ marginLeft: 'auto', fontSize: 13 }}>
           live:{' '}
@@ -383,6 +477,84 @@ export default function App() {
             {liveCount}
           </span>
         </span>
+
+        {/* Phase 7 — backend indicator badge */}
+        <span style={{ fontSize: 11, color: '#666' }}>
+          {mapsApiKey ? 'Google Maps' : 'Esri (free)'}
+        </span>
+
+        {/* Phase 7 — API key settings cog */}
+        <button
+          data-testid="maps-key-toggle"
+          onClick={() => setShowKeyInput((v) => !v)}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#666',
+            cursor: 'pointer',
+            fontSize: 16,
+            padding: '2px 4px',
+          }}
+          title={mapsApiKey ? 'Change/clear Google Maps API key' : 'Set Google Maps API key'}
+        >
+          ⚙
+        </button>
+        {showKeyInput && (
+          <>
+            <input
+              data-testid="maps-key-input"
+              type="password"
+              placeholder="Paste Google Maps API key..."
+              value={pendingKey}
+              onChange={(e) => setPendingKey(e.target.value)}
+              style={{
+                padding: '4px 8px',
+                fontSize: 12,
+                background: '#1a1a3a',
+                color: '#eee',
+                border: '1px solid #444',
+                borderRadius: 4,
+                width: 200,
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void handleSaveKey();
+                if (e.key === 'Escape') setShowKeyInput(false);
+              }}
+            />
+            <button
+              data-testid="maps-key-save"
+              onClick={() => void handleSaveKey()}
+              style={{
+                padding: '4px 10px',
+                background: '#2d5a8e',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 4,
+                cursor: 'pointer',
+                fontSize: 12,
+              }}
+            >
+              Save
+            </button>
+            {mapsApiKey && (
+              <button
+                data-testid="maps-key-clear"
+                onClick={() => void handleClearKey()}
+                style={{
+                  padding: '4px 10px',
+                  background: '#5a2d2d',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                  fontSize: 12,
+                }}
+              >
+                Clear
+              </button>
+            )}
+          </>
+        )}
       </div>
 
       {/* Phase 0 verification rows — hidden by default, testids preserved */}
