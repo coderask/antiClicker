@@ -99,7 +99,27 @@ export default function App() {
     window.api.getFirstRunSeen().then((seen) => {
       if (!seen) setShowOverlay(true);
     }).catch(() => undefined);
+    // Phase 7: load persisted recent pins from electron-store on mount
+    window.api.getRecentPins().then((pins) => {
+      // Strip the timestamp field — React state only needs lat/lng
+      setRecentPins(pins.map((p) => ({ latitude: p.latitude, longitude: p.longitude })));
+    }).catch(() => undefined);
   }, []);
+
+  // Phase 7: debounced persist of recentPins to electron-store (500ms)
+  useEffect(() => {
+    if (recentPins.length === 0) return; // skip initial empty (loaded from store already)
+    const timer = setTimeout(() => {
+      const now = Date.now();
+      const toStore = recentPins.map((p) => ({
+        latitude: p.latitude,
+        longitude: p.longitude,
+        timestamp: now,
+      }));
+      window.api.setRecentPins(toStore).catch(() => undefined);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [recentPins]);
 
   useEffect(() => {
     // Phase 3/5: subscribe to instance-closed push events from main.
