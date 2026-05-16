@@ -5,13 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-eval' https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://server.arcgisonline.com https://maps.googleapis.com https://maps.gstatic.com https://*.googleapis.com https://*.gstatic.com; connect-src 'self' https://server.arcgisonline.com https://maps.googleapis.com https://maps.gstatic.com; worker-src 'self' blob:;"
+      content="default-src 'self'; script-src 'self' 'unsafe-eval' https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://server.arcgisonline.com https://maps.googleapis.com https://maps.gstatic.com https://*.googleapis.com https://*.gstatic.com https://*.ggpht.com; connect-src 'self' https://server.arcgisonline.com https://maps.googleapis.com https://maps.gstatic.com; worker-src 'self' blob:;"
     />
     <title>AntiClicker</title>
   </head>
   <body>
     <div id="root"></div>
-    <!-- Renderer entry; main.tsx will be created in plan 00-05 -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

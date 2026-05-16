@@ -1,16 +1,13 @@
 // src/renderer/src/CoordInput.tsx
 //
-// Coordinate input form for Phase 4 Map UI.
-//
-// Features:
-//  - Two number inputs for latitude and longitude
-//  - A text input for pasting a Google Maps URL (auto-extracts coordinates on change)
-//  - zod-validated submit (lat: -90..90, lng: -180..180)
-//  - Inline error display with data-testid="coord-error"
+// Coordinate entry form. Lives inside the floating command bar.
+// Accepts lat/lng numeric entry OR a Google Maps URL that auto-parses to
+// fill the lat/lng inputs.
 
 import { useState } from 'react';
 import { z } from 'zod';
 import { parseMapsUrl } from './utils/parseMapsUrl';
+import { theme } from './theme';
 
 const CoordsFormSchema = z.object({
   latitude: z
@@ -35,29 +32,23 @@ export default function CoordInput({ onSubmit }: CoordInputProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
     const lat = parseFloat(latStr);
     const lng = parseFloat(lngStr);
-
     if (isNaN(lat) || isNaN(lng)) {
-      setError('Latitude and longitude must be numbers.');
+      setError('Lat and lng must be numbers.');
       return;
     }
-
     const result = CoordsFormSchema.safeParse({ latitude: lat, longitude: lng });
     if (!result.success) {
-      const messages = result.error.issues.map((i) => i.message).join(' ');
-      setError(messages);
+      setError(result.error.issues.map((i) => i.message).join(' '));
       return;
     }
-
     setError(null);
     onSubmit({ latitude: result.data.latitude, longitude: result.data.longitude });
   };
 
   const handleUrlChange = (value: string) => {
     setUrlStr(value);
-
     if (value.length > 10) {
       const parsed = parseMapsUrl(value);
       if (parsed) {
@@ -66,73 +57,78 @@ export default function CoordInput({ onSubmit }: CoordInputProps) {
         setError(null);
         setUrlStr('');
       } else if (value.includes('http')) {
-        setError('Could not parse coordinates from URL.');
+        setError('No coordinates found in URL.');
       }
     }
-  };
-
-  const inputStyle: React.CSSProperties = {
-    width: 100,
-    padding: '3px 6px',
-    background: '#2a2a3e',
-    color: '#eee',
-    border: '1px solid #444',
-    borderRadius: 3,
-    fontSize: 12,
   };
 
   return (
     <form
       onSubmit={handleSubmit}
       data-testid="coord-input-form"
-      style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+      }}
     >
       <input
         type="number"
         step="any"
-        placeholder="Latitude"
+        placeholder="lat"
         value={latStr}
         onChange={(e) => setLatStr(e.target.value)}
         data-testid="lat-input"
-        style={inputStyle}
+        className="ac-input"
+        style={{ width: 86, padding: '5px 8px', fontSize: 11 }}
       />
       <input
         type="number"
         step="any"
-        placeholder="Longitude"
+        placeholder="lng"
         value={lngStr}
         onChange={(e) => setLngStr(e.target.value)}
         data-testid="lng-input"
-        style={inputStyle}
+        className="ac-input"
+        style={{ width: 86, padding: '5px 8px', fontSize: 11 }}
       />
       <button
         type="submit"
         data-testid="coord-submit"
+        className="ac-btn"
         style={{
-          padding: '3px 10px',
-          background: '#3a3a5e',
-          color: '#eee',
-          border: '1px solid #555',
-          borderRadius: 3,
-          cursor: 'pointer',
-          fontSize: 12,
+          padding: '5px 10px',
+          fontSize: 10,
+          letterSpacing: '0.05em',
+          textTransform: 'uppercase',
         }}
       >
         Go
       </button>
       <input
         type="text"
-        placeholder="Paste Google Maps URL"
+        placeholder="or paste Google Maps URL…"
         value={urlStr}
         onChange={(e) => handleUrlChange(e.target.value)}
         data-testid="maps-url-input"
-        style={{ ...inputStyle, width: 180 }}
+        className="ac-input"
+        style={{
+          width: 200,
+          padding: '5px 8px',
+          fontSize: 11,
+          fontFamily: theme.font.body,
+        }}
       />
       {error && (
         <span
           data-testid="coord-error"
           role="alert"
-          style={{ color: '#ff8080', fontSize: 11 }}
+          className="ac-mono"
+          style={{
+            color: theme.color.danger,
+            fontSize: 10,
+            letterSpacing: '0.02em',
+          }}
         >
           {error}
         </span>

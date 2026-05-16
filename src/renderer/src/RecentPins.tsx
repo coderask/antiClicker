@@ -1,13 +1,10 @@
 // src/renderer/src/RecentPins.tsx
 //
-// Phase 5 — Multi-Instance UX
-//
-// Displays the last N=10 pin coordinates used in the current session.
-// Clicking a row populates the CoordInput (via onSelect callback) and
-// flies the map to that location — does NOT auto-launch.
-//
-// Session-only: lives entirely in React state, no disk persistence.
-// Clears automatically on app quit.
+// Ring buffer of the last 10 launched pin coordinates. Click a row to set as
+// draft pin + fly the map. Persisted via electron-store (handled in App).
+
+import { theme } from './theme';
+import { SectionHeader } from './Sidebar';
 
 export interface RecentPinsProps {
   pins: Array<{ latitude: number; longitude: number }>;
@@ -15,47 +12,35 @@ export interface RecentPinsProps {
 }
 
 export default function RecentPins({ pins, onSelect }: RecentPinsProps) {
-  // Show most recent first (reverse order)
   const reversed = [...pins].reverse();
 
   return (
     <div
       data-testid="recent-pins"
       style={{
-        borderTop: '1px solid #2a2a3e',
-        flexShrink: 0,
-        maxHeight: 200,
         display: 'flex',
         flexDirection: 'column',
+        overflow: 'hidden',
+        flexShrink: 0,
       }}
     >
-      {/* Section header */}
-      <div
-        style={{
-          padding: '6px 12px 4px',
-          fontSize: 11,
-          color: '#888',
-          fontWeight: 600,
-          letterSpacing: '0.05em',
-          textTransform: 'uppercase',
-        }}
-      >
-        Recent Pins
-      </div>
-
-      {/* Pin list */}
-      <div style={{ overflowY: 'auto', flex: 1 }}>
+      <SectionHeader
+        label="Recent pins"
+        count={reversed.length}
+        empty={reversed.length === 0}
+      />
+      <div style={{ overflowY: 'auto', maxHeight: 220 }}>
         {reversed.length === 0 ? (
           <div
             data-testid="recent-pins-empty"
             style={{
-              padding: '8px 12px',
-              color: '#555',
-              fontSize: 11,
-              textAlign: 'center',
+              padding: '8px 18px 16px',
+              color: theme.color.textFaint,
+              fontSize: theme.size.xs,
+              lineHeight: 1.5,
             }}
           >
-            No recent pins
+            Launched pins land here.
           </div>
         ) : (
           reversed.map((pin, idx) => (
@@ -64,20 +49,44 @@ export default function RecentPins({ pins, onSelect }: RecentPinsProps) {
               data-testid="recent-pin-row"
               onClick={() => onSelect(pin)}
               style={{
-                display: 'block',
+                display: 'flex',
+                alignItems: 'center',
                 width: '100%',
-                textAlign: 'left',
-                background: 'none',
+                background: 'transparent',
                 border: 'none',
-                color: '#bbb',
-                padding: '4px 12px',
+                color: theme.color.textMuted,
+                padding: '6px 18px',
+                fontFamily: theme.font.mono,
                 fontSize: 11,
-                fontFamily: 'monospace',
+                fontFeatureSettings: '"tnum"',
                 cursor: 'pointer',
-                lineHeight: 1.4,
+                textAlign: 'left',
+                gap: 8,
+                letterSpacing: '0.02em',
+                transition: `background ${theme.motion.fast}, color ${theme.motion.fast}`,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                e.currentTarget.style.color = theme.color.text;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.color = theme.color.textMuted;
               }}
             >
-              {pin.latitude.toFixed(4)}, {pin.longitude.toFixed(4)}
+              <span
+                style={{
+                  color: theme.color.textFaint,
+                  fontSize: 9,
+                  width: 14,
+                  letterSpacing: 0,
+                }}
+              >
+                {String(idx + 1).padStart(2, '0')}
+              </span>
+              <span>{pin.latitude.toFixed(4)}</span>
+              <span style={{ color: theme.color.textFaint }}>,</span>
+              <span>{pin.longitude.toFixed(4)}</span>
             </button>
           ))
         )}
