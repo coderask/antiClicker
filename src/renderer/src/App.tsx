@@ -24,6 +24,7 @@
 
 import { useEffect, useState } from 'react';
 import MapView, { type PinCoords } from './map/MapView';
+import GoogleMapView from './map/GoogleMapView';
 import CoordInput from './CoordInput';
 import Sidebar, { type VerifyResult } from './Sidebar';
 import RecentPins from './RecentPins';
@@ -368,14 +369,27 @@ export default function App() {
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
         {/* Map — fills available horizontal space */}
         <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
-          <MapView
-            pin={draftPin}
-            onPinChange={setDraftPin}
-            flyToTrigger={flyToTrigger}
-            instances={instances}
-            activeId={activeId}
-            onMarkerDrag={(id, newCoords) => void handleSetGeo(id, newCoords)}
-          />
+          {mapsApiKey ? (
+            <GoogleMapView
+              pin={draftPin}
+              onPinChange={setDraftPin}
+              flyToTrigger={flyToTrigger}
+              instances={instances}
+              activeId={activeId}
+              onMarkerDrag={(id, newCoords) => void handleSetGeo(id, newCoords)}
+              apiKey={mapsApiKey}
+              onFallback={() => setMapsApiKey(null)}
+            />
+          ) : (
+            <MapView
+              pin={draftPin}
+              onPinChange={setDraftPin}
+              flyToTrigger={flyToTrigger}
+              instances={instances}
+              activeId={activeId}
+              onMarkerDrag={(id, newCoords) => void handleSetGeo(id, newCoords)}
+            />
+          )}
         </div>
 
         {/* Sidebar (right panel) */}
