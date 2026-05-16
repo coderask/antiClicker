@@ -50,7 +50,10 @@
           ]
         }
       ],
-      "identity": "-"
+      "identity": "-",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "sign": "./scripts/sign-adhoc.cjs"
     },
     "win": {
       "icon": "build/icon.png",
