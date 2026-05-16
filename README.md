@@ -11,27 +11,32 @@
 
 ## Download
 
-| Platform | File | Size |
-|----------|------|------|
-| macOS (Apple Silicon) | `AntiClicker-0.0.1-arm64.dmg` | ~117 MB |
-| macOS (Intel) | `AntiClicker-0.0.1.dmg` | ~121 MB |
-| Windows 10/11 | `AntiClicker Setup 0.0.1.exe` | ~94 MB |
+| Platform | File | Notes |
+|----------|------|-------|
+| macOS (Apple Silicon) | `AntiClicker-0.0.2-arm64.dmg` | Ad-hoc signed |
+| macOS (Intel) | `AntiClicker-0.0.2.dmg` | Ad-hoc signed |
+| Windows 10/11 | `AntiClicker Setup 0.0.2.exe` | Unsigned |
 
 Download from [Releases](../../releases).
 
-### Security Warnings (Expected)
+### macOS (ad-hoc signed in v0.0.2 — Gatekeeper warning is expected)
 
-Both installers are **unsigned** for v1. You will see a platform warning on first install:
+1. Download `AntiClicker-0.0.2-arm64.dmg` (Apple Silicon) or `AntiClicker-0.0.2.dmg` (Intel) from the latest release.
+2. Open the DMG, drag `AntiClicker.app` to the Applications shortcut, eject the disk image.
+3. First launch will fail with "AntiClicker can't be opened because Apple cannot check it for malicious software." This is expected — the app is ad-hoc signed, not notarized. To approve it:
+   - Open **System Settings → Privacy & Security**
+   - Scroll down to the message: "AntiClicker was blocked to protect your Mac"
+   - Click **"Open Anyway"**
+   - macOS will prompt you again — click **"Open"** in the confirmation dialog
+4. The app opens. The first-run scope overlay appears; read it and click "Got it."
+5. You're in. Future launches double-click as normal.
 
-**macOS (Gatekeeper):**
-1. Double-click the `.dmg` to open it.
-2. Drag `AntiClicker.app` to your Applications folder.
-3. Right-click `AntiClicker.app` in Applications and choose **Open**.
-4. Click **Open** in the Gatekeeper dialog. After this, it opens normally.
+> Why ad-hoc signing and not notarization? Notarization requires a $99/year Apple Developer membership. v0.0.2 is the ad-hoc-signed compromise: works, but you click through one warning the first time.
 
-**Windows (SmartScreen):**
-1. Run the NSIS installer (`AntiClicker Setup 0.0.1.exe`).
-2. If SmartScreen blocks it, click **More info** then **Run anyway**.
+### Windows (SmartScreen)
+
+1. Download `AntiClicker Setup 0.0.2.exe`.
+2. Run it. SmartScreen blocks unrecognized publishers — click **More info** then **Run anyway**.
 3. The app installs to `%LOCALAPPDATA%\Programs\AntiClicker` by default.
 
 ---
