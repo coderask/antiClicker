@@ -1,6 +1,6 @@
 {
   "name": "anticlicker",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "private": true,
   "type": "module",
   "main": "./out/main/index.js",
@@ -31,12 +31,18 @@
       "out/**/*",
       "package.json",
       "node_modules/playwright/**",
-      "node_modules/playwright-core/**",
-      "node_modules/playwright-chromium/**"
+      "node_modules/playwright-core/**"
     ],
     "asarUnpack": [
-      "**/node_modules/playwright/.local-browsers/**",
-      "**/node_modules/playwright-core/.local-browsers/**"
+      "node_modules/playwright/**",
+      "node_modules/playwright-core/**"
+    ],
+    "extraResources": [
+      {
+        "from": "node_modules/playwright-core/.local-browsers",
+        "to": "playwright-browsers",
+        "filter": ["**/*"]
+      }
     ],
     "mac": {
       "category": "public.app-category.developer-tools",
@@ -75,6 +81,7 @@
   "dependencies": {
     "electron-store": "^11.0.2",
     "maplibre-gl": "^5.24.0",
+    "playwright": "^1.60.0",
     "zod": "^4.0.0"
   },
   "devDependencies": {
@@ -92,7 +99,6 @@
     "electron-vite": "^5.0.0",
     "eslint": "^9.39.0",
     "happy-dom": "^20.9.0",
-    "playwright": "^1.60.0",
     "prettier": "^3.7.4",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
