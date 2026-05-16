@@ -1,0 +1,305 @@
+/* src/renderer/src/styles.css
+ *
+ * Global reset + font loading + reusable keyframes.
+ * Aesthetic: cartographic instrument console.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* ─── Reset ──────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: #08090d;
+  color: #ecedef;
+  font-family: 'Inter Tight', system-ui, -apple-system, sans-serif;
+  font-feature-settings: 'cv11', 'ss01';
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+  cursor: default;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+  user-select: text;
+}
+
+/* ─── Scrollbars — minimal, monochrome ───────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* ─── Keyframes ──────────────────────────────────────────────────────── */
+@keyframes ac-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ac-slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes ac-pulse-phosphor {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 45, 146, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(255, 45, 146, 0);
+  }
+}
+
+@keyframes ac-shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes ac-blink {
+  0%,
+  60% {
+    opacity: 1;
+  }
+  61%,
+  100% {
+    opacity: 0.3;
+  }
+}
+
+/* ─── Stagger reveal — used on first paint and on panel mounts ───────── */
+.ac-reveal {
+  animation: ac-fade-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.ac-reveal-1 {
+  animation-delay: 60ms;
+}
+.ac-reveal-2 {
+  animation-delay: 140ms;
+}
+.ac-reveal-3 {
+  animation-delay: 220ms;
+}
+.ac-reveal-4 {
+  animation-delay: 300ms;
+}
+
+/* ─── Hairline divider — used everywhere ─────────────────────────────── */
+.ac-rule {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent
+  );
+}
+
+/* ─── Section-label typography — used in sidebar headers ─────────────── */
+.ac-section-label {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-style: italic;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: #ecedef;
+  font-weight: 400;
+}
+
+.ac-section-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #5a5d66;
+  letter-spacing: 0.05em;
+  font-feature-settings: 'tnum';
+}
+
+.ac-mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-feature-settings: 'tnum';
+}
+
+/* ─── Buttons ─────────────────────────────────────────────────────────── */
+.ac-btn {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #ecedef;
+  font: 500 12px/1 'Inter Tight', system-ui, sans-serif;
+  letter-spacing: 0.01em;
+  padding: 7px 12px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition:
+    background 120ms,
+    border-color 120ms,
+    color 120ms;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ac-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.ac-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ac-btn-primary {
+  background: rgba(255, 45, 146, 0.16);
+  border-color: rgba(255, 45, 146, 0.55);
+  color: #ff2d92;
+}
+
+.ac-btn-primary:hover:not(:disabled) {
+  background: rgba(255, 45, 146, 0.26);
+  border-color: rgba(255, 45, 146, 0.75);
+}
+
+.ac-btn-primary:not(:disabled) {
+  box-shadow: 0 0 0 1px rgba(255, 45, 146, 0.22), 0 0 18px rgba(255, 45, 146, 0.14);
+}
+
+.ac-btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: #8a8e98;
+}
+
+.ac-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ecedef;
+}
+
+.ac-btn-danger {
+  color: #f87171;
+}
+
+.ac-btn-danger:hover {
+  background: rgba(248, 113, 113, 0.08);
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+/* ─── Inputs ──────────────────────────────────────────────────────────── */
+.ac-input {
+  appearance: none;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ecedef;
+  padding: 7px 10px;
+  font: 500 12px/1.2 'JetBrains Mono', monospace;
+  font-feature-settings: 'tnum';
+  border-radius: 2px;
+  outline: none;
+  transition: border-color 120ms, background 120ms;
+}
+
+.ac-input::placeholder {
+  color: #5a5d66;
+}
+
+.ac-input:focus {
+  border-color: rgba(255, 45, 146, 0.65);
+  background: rgba(255, 45, 146, 0.05);
+}
+
+/* Hide number-input spinners — coordinate inputs feel cleaner without them */
+.ac-input[type='number']::-webkit-inner-spin-button,
+.ac-input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ─── Tick / register mark — decorative, used in reticle ─────────────── */
+.ac-tick {
+  position: absolute;
+  background: #ff2d92;
+}
+.ac-tick-h {
+  height: 1px;
+  width: 8px;
+}
+.ac-tick-v {
+  width: 1px;
+  height: 8px;
+}
+
+/* ─── Pulse beacon — used on active running instance dot ─────────────── */
+.ac-pulse {
+  animation: ac-pulse-phosphor 1.8s ease-out infinite;
+}
+
+/* ─── Maplibre overrides — make the attribution match our aesthetic ──── */
+.maplibregl-ctrl-attrib {
+  background: rgba(8, 9, 13, 0.7) !important;
+  color: #5a5d66 !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 9px !important;
+  letter-spacing: 0.02em;
+}
+.maplibregl-ctrl-attrib a {
+  color: #8a8e98 !important;
+}
+.maplibregl-ctrl-bottom-right {
+  bottom: 64px !important; /* clear our floating command bar */
+}
+.maplibregl-ctrl-bottom-left {
+  bottom: 64px !important;
+}
+
+/* Google Maps tweaks — its controls don't theme well, so suppress most */
+.gm-style .gm-style-cc {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 9px !important;
+}

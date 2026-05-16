@@ -98,6 +98,12 @@ Recent decisions affecting current work:
 
 None. Milestone complete.
 
+## Quick Tasks Completed
+
+| Date       | Slug                | Summary                                                          |
+|------------|---------------------|------------------------------------------------------------------|
+| 2026-05-16 | bolder-pin-color    | Accent swapped from amber `#f5a524` → hot magenta `#ff2d92` for satellite-imagery contrast |
+
 ## Deferred Items
 
 | Category | Item | Status | Deferred At |
