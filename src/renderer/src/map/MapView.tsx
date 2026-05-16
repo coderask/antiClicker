@@ -25,20 +25,25 @@ import maplibregl, { type StyleSpecification } from 'maplibre-gl';
 // ---------------------------------------------------------------------------
 // EOX S2cloudless 2020 raster source — no API key, CC BY 4.0 attribution
 // ---------------------------------------------------------------------------
-const EOX_STYLE: StyleSpecification = {
+// Esri World Imagery — free, no API key, worldwide satellite coverage.
+// Replaces EOX S2cloudless which started returning HTTP 403 to non-allowlisted
+// referrers (v0.0.3 white-map bug). Esri allows third-party use under its
+// terms-of-use as long as the attribution is shown.
+const SATELLITE_STYLE: StyleSpecification = {
   version: 8,
   sources: {
-    'eox-s2cloudless': {
+    'esri-world-imagery': {
       type: 'raster',
       tiles: [
-        'https://s2maps-tiles.eu/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg',
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       ],
       tileSize: 256,
-      attribution: 'Sentinel-2 cloudless by <a href="https://eox.at">EOX IT Services GmbH</a> (2020)',
-      maxzoom: 14,
+      attribution:
+        'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+      maxzoom: 19,
     },
   },
-  layers: [{ id: 'eox-layer', type: 'raster', source: 'eox-s2cloudless' }],
+  layers: [{ id: 'satellite-layer', type: 'raster', source: 'esri-world-imagery' }],
 };
 
 export interface PinCoords {
@@ -96,7 +101,7 @@ export default function MapView({
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: EOX_STYLE,
+      style: SATELLITE_STYLE,
       center: [0, 0],
       zoom: 2,
       maxZoom: 14,
