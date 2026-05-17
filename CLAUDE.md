@@ -1,3 +1,7 @@
+<OVERARCHING INSTRUCTION, TO ALWAYS BE FOLLOWED>
+if you have any task that is more than a few step, use a sonnet subagent for it. 
+
+
 <!-- GSD:project-start source:PROJECT.md -->
 ## Project
 
