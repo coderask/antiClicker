@@ -1,17 +1,20 @@
 // src/main/geocoder.ts
 //
-// Place-search backend. Calls Nominatim (OpenStreetMap) from the main
-// process so we can set the `User-Agent` header that Nominatim's TOS
-// requires. Renderer-side fetch cannot set User-Agent, hence the IPC hop.
+// Place-search backend. Supports two providers:
 //
-// Provider choice: Nominatim is free, no API key, global POI coverage.
-// Rate-limited to ~1 req/sec per IP — the renderer debounces 300ms, so a
-// typing user produces ~3 req/sec worst-case, which is fine.
+//   1. Google Places API (New) — used when a googleMapsApiKey is configured.
+//      Endpoint: https://places.googleapis.com/v1/places:searchText
+//      Requires "Places API (New)" enabled in Google Cloud Console (separate
+//      from "Maps JavaScript API"). Cost: ~$0.017/request, $200/month credit
+//      → roughly 11 700 free searches/month, ~$2.83/1000 sessions.
 //
-// If a Google Maps API key is ever wired in (it's already in electron-store
-// for the map backend), this is the right place to branch:
-//   if (apiKey) return geocodeGoogle(query, apiKey)
-//   else return geocodeNominatim(query)
+//   2. Nominatim (OpenStreetMap) — free fallback; no key required.
+//      Called from the main process so we can set the User-Agent header
+//      (Nominatim TOS requires it; renderer-side fetch cannot set it).
+//
+// Provider selection: the top-level `geocode()` export branches on whether
+// an API key is passed. If Google Places returns a non-200 or an empty
+// result list, it falls back to Nominatim automatically.
 
 export interface GeocodeResult {
   name: string;
@@ -20,10 +23,118 @@ export interface GeocodeResult {
   longitude: number;
 }
 
-const NOMINATIM_ENDPOINT = 'https://nominatim.openstreetmap.org/search';
-const USER_AGENT = 'AntiClicker/0.0.5 (https://github.com/coderask/antiClicker)';
+// ---------------------------------------------------------------------------
+// Shared constants
+// ---------------------------------------------------------------------------
+
 const TIMEOUT_MS = 8000;
 const RESULT_LIMIT = 6;
+
+// ---------------------------------------------------------------------------
+// Top-level dispatcher (called by ipc.ts)
+// ---------------------------------------------------------------------------
+
+/**
+ * Geocode a free-text query. If `apiKey` is non-empty, tries Google Places
+ * first; falls back to Nominatim on throw or empty result set.
+ */
+export async function geocode(
+  query: string,
+  options: { apiKey?: string | null } = {},
+): Promise<GeocodeResult[]> {
+  const key = options.apiKey?.trim() ?? '';
+  if (key) {
+    try {
+      const results = await geocodeGoogle(query, key);
+      if (results.length > 0) return results;
+      // zero results — fall through to Nominatim
+    } catch {
+      // non-200, network error, parse failure — fall through
+    }
+  }
+  return geocodeNominatim(query);
+}
+
+// ---------------------------------------------------------------------------
+// Google Places (New) provider
+// ---------------------------------------------------------------------------
+
+const PLACES_ENDPOINT = 'https://places.googleapis.com/v1/places:searchText';
+
+interface PlacesRow {
+  displayName?: { text?: string };
+  formattedAddress?: string;
+  location?: { latitude?: number; longitude?: number };
+}
+
+interface PlacesResponse {
+  places?: PlacesRow[];
+}
+
+/**
+ * Geocode via Google Places Text Search (New API).
+ * Throws on non-200 or network error so the caller can fall back.
+ */
+export async function geocodeGoogle(
+  query: string,
+  apiKey: string,
+): Promise<GeocodeResult[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(PLACES_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location',
+      },
+      body: JSON.stringify({
+        textQuery: trimmed,
+        languageCode: 'en',
+        maxResultCount: RESULT_LIMIT,
+      }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (!response.ok) {
+    throw new Error(`Google Places returned ${response.status}`);
+  }
+
+  const raw = (await response.json()) as PlacesResponse;
+  const rows: PlacesRow[] = raw.places ?? [];
+
+  const results: GeocodeResult[] = [];
+  for (const row of rows) {
+    const lat = row.location?.latitude;
+    const lon = row.location?.longitude;
+    if (lat === undefined || lon === undefined) continue;
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) continue;
+
+    const name = row.displayName?.text?.trim() ?? '';
+    const detail = row.formattedAddress?.trim() ?? '';
+    if (!name) continue;
+
+    results.push({ name, detail, latitude: lat, longitude: lon });
+  }
+  return results.slice(0, RESULT_LIMIT);
+}
+
+// ---------------------------------------------------------------------------
+// Nominatim (OpenStreetMap) provider
+// ---------------------------------------------------------------------------
+
+const NOMINATIM_ENDPOINT = 'https://nominatim.openstreetmap.org/search';
+const USER_AGENT = 'AntiClicker/0.0.6 (https://github.com/coderask/antiClicker)';
 
 interface NominatimRow {
   display_name?: string;

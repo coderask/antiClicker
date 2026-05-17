@@ -1,10 +1,10 @@
 // tests/unit/geocoder.test.ts
 //
-// Unit tests for the Nominatim geocoder. Mocks global.fetch so no real
-// network call is made.
+// Unit tests for the Nominatim geocoder and Google Places geocoder.
+// Mocks global.fetch so no real network call is made.
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { geocodeNominatim } from '../../src/main/geocoder';
+import { geocodeNominatim, geocodeGoogle } from '../../src/main/geocoder';
 
 const originalFetch = globalThis.fetch;
 
@@ -133,5 +133,98 @@ describe('geocodeNominatim', () => {
     const url = fetchSpy.mock.calls[0][0] as string;
     expect(url).toContain('q=paris');
     expect(url).not.toContain('q=%20%20paris');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// geocodeGoogle tests
+// ---------------------------------------------------------------------------
+
+function mockPlacesFetch(body: unknown, init: { ok?: boolean; status?: number } = {}): typeof fetch {
+  return vi.fn(async () =>
+    ({
+      ok: init.ok ?? true,
+      status: init.status ?? 200,
+      json: async () => body,
+    }) as unknown as Response,
+  ) as unknown as typeof fetch;
+}
+
+describe('geocodeGoogle', () => {
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    vi.restoreAllMocks();
+  });
+
+  it('parses a valid Places response into GeocodeResult[]', async () => {
+    globalThis.fetch = mockPlacesFetch({
+      places: [
+        {
+          displayName: { text: 'Interactive Learning Pavilion' },
+          formattedAddress: 'UCSB, Santa Barbara, CA 93106, USA',
+          location: { latitude: 34.4133, longitude: -119.8483 },
+        },
+      ],
+    });
+    const r = await geocodeGoogle('ILP UCSB', 'fake-key');
+    expect(r).toHaveLength(1);
+    expect(r[0].name).toBe('Interactive Learning Pavilion');
+    expect(r[0].detail).toContain('UCSB');
+    expect(r[0].latitude).toBeCloseTo(34.4133, 4);
+    expect(r[0].longitude).toBeCloseTo(-119.8483, 4);
+  });
+
+  it('returns an empty array when places array is empty', async () => {
+    globalThis.fetch = mockPlacesFetch({ places: [] });
+    const r = await geocodeGoogle('no results', 'fake-key');
+    expect(r).toEqual([]);
+  });
+
+  it('throws when response is non-200', async () => {
+    globalThis.fetch = mockPlacesFetch({ error: { message: 'API not enabled' } }, { ok: false, status: 403 });
+    await expect(geocodeGoogle('test', 'fake-key')).rejects.toThrow(/403/);
+  });
+
+  it('skips rows with missing location field', async () => {
+    globalThis.fetch = mockPlacesFetch({
+      places: [
+        { displayName: { text: 'No Location' }, formattedAddress: 'Somewhere' },
+        { displayName: { text: 'Has Location' }, formattedAddress: 'Paris', location: { latitude: 48.8566, longitude: 2.3522 } },
+      ],
+    });
+    const r = await geocodeGoogle('paris', 'fake-key');
+    expect(r).toHaveLength(1);
+    expect(r[0].name).toBe('Has Location');
+  });
+
+  it('sends correct headers and POST body', async () => {
+    const fetchSpy = vi.fn(async () =>
+      ({
+        ok: true,
+        status: 200,
+        json: async () => ({ places: [] }),
+      }) as unknown as Response,
+    );
+    globalThis.fetch = fetchSpy as unknown as typeof fetch;
+    await geocodeGoogle('coffee shop', 'my-api-key');
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [url, opts] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('https://places.googleapis.com/v1/places:searchText');
+    expect(opts.method).toBe('POST');
+    const headers = opts.headers as Record<string, string>;
+    expect(headers['X-Goog-Api-Key']).toBe('my-api-key');
+    expect(headers['Content-Type']).toBe('application/json');
+    expect(headers['X-Goog-FieldMask']).toContain('places.location');
+    const body = JSON.parse(opts.body as string);
+    expect(body.textQuery).toBe('coffee shop');
+    expect(body.maxResultCount).toBe(6);
+  });
+
+  it('returns empty array for empty/whitespace query without calling fetch', async () => {
+    const fetchSpy = vi.fn();
+    globalThis.fetch = fetchSpy as unknown as typeof fetch;
+    expect(await geocodeGoogle('', 'key')).toEqual([]);
+    expect(await geocodeGoogle('   ', 'key')).toEqual([]);
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
