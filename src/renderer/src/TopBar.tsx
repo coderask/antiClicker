@@ -7,6 +7,7 @@
 // Both panels are translucent overlays over the map, instrument-console feel.
 
 import { theme } from './theme';
+import Logo from './assets/Logo';
 
 interface TopBarProps {
   liveCount: number;
@@ -40,38 +41,47 @@ export default function TopBar({
         <div
           style={{
             display: 'flex',
-            alignItems: 'baseline',
-            gap: 8,
+            alignItems: 'center',
+            gap: 12,
           }}
         >
-          <span
+          <Logo size={32} />
+          <div
             style={{
-              fontFamily: theme.font.serif,
-              fontStyle: 'italic',
-              fontSize: 22,
-              fontWeight: 400,
-              color: theme.color.text,
-              lineHeight: 1,
-              letterSpacing: '-0.01em',
-              textShadow: '0 1px 8px rgba(0,0,0,0.6)',
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: 8,
             }}
           >
-            AntiClicker
-          </span>
-          <span
-            className="ac-mono"
-            style={{
-              fontSize: 9,
-              letterSpacing: '0.18em',
-              color: theme.color.accent,
-              textTransform: 'uppercase',
-              textShadow: '0 1px 4px rgba(0,0,0,0.7)',
-            }}
-          >
-            spoof
-            <br />
-            console
-          </span>
+            <span
+              style={{
+                fontFamily: theme.font.serif,
+                fontStyle: 'italic',
+                fontSize: 22,
+                fontWeight: 400,
+                color: theme.color.text,
+                lineHeight: 1,
+                letterSpacing: '-0.01em',
+                textShadow: '0 1px 8px rgba(0,0,0,0.6)',
+              }}
+            >
+              AntiClicker
+            </span>
+            <span
+              className="ac-mono"
+              style={{
+                fontSize: 9,
+                letterSpacing: '0.18em',
+                color: theme.color.accent,
+                textTransform: 'uppercase',
+                textShadow: '0 1px 4px rgba(0,0,0,0.7)',
+              }}
+            >
+              spoof
+              <br />
+              console
+            </span>
+          </div>
         </div>
       </div>
 
